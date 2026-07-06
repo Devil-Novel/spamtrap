@@ -1,0 +1,19 @@
+{
+  "name": "spamtrap-bot",
+  "version": "1.0.0",
+  "description": "Discord spam trap bot -- catches compromised accounts by watching a trap channel.",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.8.1",
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.7",
+    "node-cron": "^3.0.3"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
