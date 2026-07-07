@@ -193,7 +193,6 @@ function startDashboard(client) {
 
   // ── API: global overview ──
   app.get('/api/overview', (req, res) => {
-    if (!req.session.accessToken) return res.status(401).json({ error: 'Not logged in' });
     const db = store.readDb();
     res.json({
       totalServers: client.guilds.cache.size,
