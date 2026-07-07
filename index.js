@@ -77,8 +77,8 @@ function buildStatusEmbed(guildId, guild) {
     : 'Not set';
 
   return new EmbedBuilder()
-    .setTitle(`${E.protection} Spam Trap — Status`)
-    .setColor(0x2b2d31)
+    .setTitle(`Spam Trap Status ${E.protection}`)
+    .setColor(0xf47521)
     .addFields(
       { name: 'Trap channel(s)', value: trapChannels },
       { name: 'Log channel', value: g.logChannel ? `<#${g.logChannel}>` : 'Not set' },
@@ -96,10 +96,10 @@ function buildStatusEmbed(guildId, guild) {
 
 function buildExperimentsEmbed(guildId) {
   const g = store.getGuild(guildId);
-  const embed = new EmbedBuilder().setTitle(`${E.experiments} Spam Trap — Experiments`).setColor(0x5865f2);
+  const embed = new EmbedBuilder().setTitle(`Spam Trap Experiments ${E.experiments}`).setColor(0x060a10);
   for (const key of Object.keys(store.DEFAULT_EXPERIMENTS)) {
     embed.addFields({
-      name: `${g.experiments[key] ? E.done : '⚪'} ${store.EXPERIMENT_LABELS[key]}`,
+      name: `${g.experiments[key] ? E.done : '\u{1FAA4}'} ${store.EXPERIMENT_LABELS[key]}`,
       value: store.EXPERIMENT_DESCRIPTIONS[key],
     });
   }
@@ -114,8 +114,8 @@ function buildStatsEmbed(guildId) {
     .join('\n') || 'No recent actions';
 
   return new EmbedBuilder()
-    .setTitle(`${E.dashboard} Spam Trap — Stats`)
-    .setColor(0x57f287)
+    .setTitle(`Spam Trap Stats ${E.dashboard}`)
+    .setColor(0xf47521)
     .addFields(
       { name: 'This server', value: `${g.catchCount || 0} caught` },
       { name: 'Global (all servers)', value: `${db.global.totalCatches || 0} caught` },
@@ -216,8 +216,8 @@ async function handleCatch(message, guildConfig) {
   logText = replaceVars(logText, { actionText: actText, serverName, trapChannelLink, trapChannelMention });
 
   const logEmbed = new EmbedBuilder()
-    .setTitle(`${E.protection} Spam Trap catch`)
-    .setColor(0xed4245)
+    .setTitle(`Spam Trap catch ${E.protection}`)
+    .setColor(0xe83535)
     .setDescription(logText)
     .addFields(
       { name: 'User', value: `<@${caughtUserId}> (${caughtUserId})`, inline: true },
@@ -288,7 +288,7 @@ async function dailyTick() {
     // Channel Warmer
     if (g.experiments.channelWarmer && now - (g.lastWarm || 0) > DAY) {
       try {
-        const warmMsg = await channel.send('👋');
+        const warmMsg = await channel.send('\u{1FAA4}');
         setTimeout(() => warmMsg.delete().catch(() => {}), 12 * 60 * 60 * 1000);
       } catch (_) {}
       g.lastWarm = now;
@@ -406,7 +406,7 @@ client.on('interactionCreate', async (interaction) => {
           const channel = interaction.options.getChannel('channel');
           g.logChannel = channel.id;
           store.saveGuild(guildId, g);
-          return interaction.reply(`${E.dashboard} Log channel set to <#${channel.id}>.`);
+          return interaction.reply(`${E.done} Log channel set to <#${channel.id}>.`);
         }
 
         if (sub === 'action') {
@@ -516,7 +516,7 @@ client.on('guildCreate', async (guild) => {
   try {
     // Create the trap channel at position 0 (top of server)
     const channel = await guild.channels.create({
-      name: '⛔│spam-trap',
+      name: '\u{1FAA4}\u2502spam-trap',
       type: 0, // GuildText
       position: 0,
       reason: 'Spam Trap: auto-created trap channel',
