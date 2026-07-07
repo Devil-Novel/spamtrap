@@ -29,7 +29,7 @@ a{color:var(--orange);text-decoration:none}code{background:var(--bg2);padding:2p
 .btn-ghost{background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
 .btn-ghost:hover{background:var(--surface3);color:var(--text)}
 .btn-sm{padding:6px 12px;font-size:13px}
-.discord-icon{width:16px;height:12px;fill:currentColor}
+.discord-icon{width:18px;height:14px;fill:currentColor}
 
 /* HERO */
 .hero{padding:130px 32px 60px;max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:50px;min-height:90vh}
@@ -39,17 +39,17 @@ a{color:var(--orange);text-decoration:none}code{background:var(--bg2);padding:2p
 .hero-text p{font-size:17px;color:var(--text2);line-height:1.65;max-width:460px;margin-bottom:28px}
 .hero-text p strong{color:var(--orange)}
 .hero-buttons{display:flex;gap:10px;flex-wrap:wrap}
-.hero-visual{flex:0 0 420px;position:relative;height:380px}
-.hero-logo-wrap{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:240px;height:240px;background:url('/bg-square.png') center/cover;border-radius:20px;border:1px solid var(--border2);box-shadow:0 16px 60px rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;overflow:hidden}
-.hero-logo-wrap img{width:200px;filter:drop-shadow(0 4px 12px rgba(0,0,0,.5))}
+.hero-visual{flex:0 0 420px;position:relative;height:440px}
+.hero-logo-wrap{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:260px;height:260px;background:url('/bg-square.png') center/cover;border-radius:20px;border:1px solid var(--border2);box-shadow:0 16px 60px rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.hero-logo-wrap img{width:220px;filter:drop-shadow(0 4px 12px rgba(0,0,0,.5))}
 .hero-float{position:absolute;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:10px 16px;font-size:13px;box-shadow:0 8px 30px rgba(0,0,0,.5);white-space:nowrap;animation:float 3s ease-in-out infinite}
-.hero-float-1{top:20px;right:10px;display:flex;align-items:center;gap:8px;animation-delay:0s}
+.hero-float-1{top:0;right:-20px;display:flex;align-items:center;gap:8px;animation-delay:0s}
 .hero-float-1 .red-dot{width:8px;height:8px;border-radius:50%;background:var(--red);flex-shrink:0}
 .hero-float-1 .spam-text{color:var(--text3);font-size:12px}
-.hero-float-2{bottom:90px;right:0;display:flex;align-items:center;gap:8px;animation-delay:.5s}
+.hero-float-2{bottom:40px;right:-40px;display:flex;align-items:center;gap:8px;animation-delay:.5s}
 .hero-float-2 img{width:20px;height:20px}
 .hero-float-2 .check{color:var(--green);font-weight:700;font-size:16px}
-.hero-float-3{bottom:30px;left:10px;display:flex;align-items:center;gap:8px;color:var(--text2);animation-delay:1s}
+.hero-float-3{bottom:-10px;left:0px;display:flex;align-items:center;gap:8px;color:var(--text2);animation-delay:1s}
 .hero-float-3 .hash{color:var(--text3);font-weight:700}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 
@@ -183,7 +183,7 @@ textarea:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba
 <body>
 
 <nav class="nav">
-  <div class="nav-brand"><img src="/badge.png" alt=""><span>Spam Trap</span></div>
+  <div class="nav-brand"><img src="/nav-logo.png" alt="Spam Trap" style="height:28px"></div>
   <div class="nav-links" id="navLinks">
     <a href="#features" class="hide-mobile">Features</a>
     <a href="#how" class="hide-mobile">How It Works</a>
@@ -197,11 +197,11 @@ textarea:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba
 
 <section class="hero">
   <div class="hero-text">
-    <h1>The bot that<br><em>catches bots.</em></h1>
-    <p>Spam Trap is a Discord bot that automatically catches and removes spam bots by monitoring a dedicated <strong>#trap</strong> channel.</p>
+    <h1>The Discord bot that<br><em>stops spammers before they spread.</em></h1>
+    <p>Spam Trap automatically detects and removes spammers and compromised accounts by monitoring a dedicated <strong>#trap</strong> channel.</p>
     <div class="hero-buttons">
       <a href="https://discord.com/oauth2/authorize?client_id=1523811499766976723&permissions=1374892659782&scope=bot%20applications.commands" class="btn btn-primary" target="_blank">
-        <svg class="discord-icon" viewBox="0 0 71 55"><path d="M60.1 4.9A58.5 58.5 0 0045.4.2a.2.2 0 00-.2.1 41 41 0 00-1.8 3.7 54 54 0 00-16.2 0A37 37 0 0025.3.3a.2.2 0 00-.2-.1A58.4 58.4 0 0010.4 5a.2.2 0 00-.1 0A59.7 59.7 0 00.3 45.3a.3.3 0 000 .2 58.9 58.9 0 0017.7 9a.2.2 0 00.3-.1 42 42 0 003.6-5.9.2.2 0 00-.1-.3 38.8 38.8 0 01-5.5-2.7.2.2 0 01 0-.4l1.1-.9a.2.2 0 01.2 0 42 42 0 0035.8 0 .2.2 0 01.3 0l1 .9a.2.2 0 010 .4 36.4 36.4 0 01-5.5 2.6.2.2 0 00-.1.4 47.2 47.2 0 003.6 5.8.2.2 0 00.3.1A58.7 58.7 0 0070.6 45.5a.2.2 0 000-.2A59.2 59.2 0 0060.1 5z"/></svg>
+        <svg class="discord-icon" viewBox="0 0 127.14 96.36" fill="currentColor"><path d="M107.7 8.07A105.15 105.15 0 0081.47 0a72.06 72.06 0 00-3.36 6.83 97.68 97.68 0 00-29.11 0A72.37 72.37 0 0045.64 0a105.89 105.89 0 00-26.25 8.09C2.79 32.65-1.71 56.6.54 80.21a105.73 105.73 0 0032.17 16.15 77.7 77.7 0 006.89-11.11 68.42 68.42 0 01-10.85-5.18c.91-.66 1.8-1.34 2.66-2.03a75.57 75.57 0 0064.32 0c.87.71 1.76 1.39 2.66 2.03a68.68 68.68 0 01-10.87 5.19 77 77 0 006.89 11.1 105.25 105.25 0 0032.19-16.14c2.64-27.38-4.51-51.11-18.9-72.15zM42.45 65.69C36.18 65.69 31 60 31 53.05s5-12.68 11.45-12.68S53.89 46 53.86 53.05 48.73 65.69 42.45 65.69zm42.24 0C78.41 65.69 73.25 60 73.25 53.05s5-12.68 11.44-12.68S96.23 46 96.12 53.05 91 65.69 84.69 65.69z"/></svg>
         Invite Spam Trap
       </a>
       <a href="#how" class="btn btn-outline">How It Works</a>
@@ -253,7 +253,7 @@ textarea:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba
 <section class="how" id="how">
   <div class="how-inner">
     <h2>How It Works</h2>
-    <div class="step"><div class="step-num">1</div><div class="step-content"><h4>Bot joins and creates a trap</h4><p>When invited, Spam Trap auto-creates a <strong>⛔│spam-trap</strong> channel at the top of your server with a multilingual warning pinned inside.</p></div></div>
+    <div class="step"><div class="step-num">1</div><div class="step-content"><h4>Bot joins and creates a trap</h4><p>When invited, Spam Trap auto-creates a <strong>🪤│spam-trap</strong> channel at the top of your server with a multilingual warning pinned inside.</p></div></div>
     <div class="step"><div class="step-num">2</div><div class="step-content"><h4>A message is detected</h4><p>Spam bots blast every visible channel. When one hits your trap, the bot catches it instantly. Admins and server owners are always safe.</p></div></div>
     <div class="step"><div class="step-num">3</div><div class="step-content"><h4>The user gets a DM</h4><p>The bot sends a message explaining the account may be compromised, with steps to recover it: change password, enable 2FA, check authorized apps.</p></div></div>
     <div class="step"><div class="step-num">4</div><div class="step-content"><h4>The action runs</h4><p>Softban (default): ban then unban to purge messages while allowing the user to rejoin. Or permanent ban. Their spam is wiped from the server.</p></div></div>

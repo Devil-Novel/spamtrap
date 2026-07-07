@@ -512,7 +512,15 @@ client.on('interactionCreate', async (interaction) => {
 // ---------- guildCreate: auto-setup ----------
 
 client.on('guildCreate', async (guild) => {
-  console.log(`Joined server: ${guild.name} (${guild.id})`);
+  console.log(`[JOIN] Joined server: ${guild.name} (${guild.id})`);
+
+  // Check if bot has Manage Channels permission
+  const me = guild.members.me;
+  if (!me || !me.permissions.has(PermissionsBitField.Flags.ManageChannels)) {
+    console.log(`[JOIN] Missing Manage Channels permission in ${guild.name}`);
+    return;
+  }
+
   try {
     // Create the trap channel at position 0 (top of server)
     const channel = await guild.channels.create({
@@ -522,6 +530,8 @@ client.on('guildCreate', async (guild) => {
       reason: 'Spam Trap: auto-created trap channel',
     });
 
+    console.log(`[JOIN] Created #${channel.name} in ${guild.name}`);
+
     // Save it as the trap channel
     const g = store.getGuild(guild.id);
     g.trapChannels = [channel.id];
@@ -530,9 +540,9 @@ client.on('guildCreate', async (guild) => {
     // Post and pin the warning
     await postWarning(channel, g);
 
-    console.log(`Auto-created #${channel.name} in ${guild.name}`);
+    console.log(`[JOIN] Setup complete for ${guild.name}`);
   } catch (err) {
-    console.error(`Failed to auto-create channel in ${guild.name}: ${err.message}`);
+    console.error(`[JOIN] Failed to auto-create channel in ${guild.name}: ${err.message}`);
   }
 });
 
