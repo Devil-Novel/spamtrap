@@ -39,19 +39,19 @@ a{color:var(--orange);text-decoration:none}code{background:var(--bg2);padding:2p
 .hero-text p{font-size:17px;color:var(--text2);line-height:1.65;max-width:460px;margin-bottom:28px}
 .hero-text p strong{color:var(--orange)}
 .hero-buttons{display:flex;gap:10px;flex-wrap:wrap}
-.hero-visual{flex:0 0 420px;position:relative;height:440px}
-.hero-logo-wrap{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:260px;height:260px;background:url('/bg-square.png') center/cover;border-radius:20px;border:1px solid var(--border2);box-shadow:0 16px 60px rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;overflow:hidden}
-.hero-logo-wrap img{width:220px;filter:drop-shadow(0 4px 12px rgba(0,0,0,.5))}
-.hero-float{position:absolute;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:10px 16px;font-size:13px;box-shadow:0 8px 30px rgba(0,0,0,.5);white-space:nowrap;animation:float 3s ease-in-out infinite}
-.hero-float-1{top:0;right:-20px;display:flex;align-items:center;gap:8px;animation-delay:0s}
-.hero-float-1 .red-dot{width:8px;height:8px;border-radius:50%;background:var(--red);flex-shrink:0}
+.hero-visual{flex:0 0 420px;position:relative;height:400px}
+.hero-logo-wrap{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:250px;height:250px;background:url('/bg-square.png') center/cover;border-radius:20px;border:1px solid var(--border2);box-shadow:0 16px 60px rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.hero-logo-wrap img{width:210px;filter:drop-shadow(0 4px 12px rgba(0,0,0,.5))}
+.hero-float{position:absolute;background:rgba(22,32,48,.92);backdrop-filter:blur(8px);border:1px solid var(--border2);border-radius:12px;padding:8px 14px;font-size:13px;box-shadow:0 6px 24px rgba(0,0,0,.5);white-space:nowrap;animation:float 4s ease-in-out infinite}
+.hero-float-1{top:30px;right:-10px;display:flex;align-items:center;gap:8px;animation-delay:0s}
+.hero-float-1 .red-dot{width:8px;height:8px;border-radius:50%;background:var(--red);flex-shrink:0;box-shadow:0 0 6px var(--red)}
 .hero-float-1 .spam-text{color:var(--text3);font-size:12px}
-.hero-float-2{bottom:40px;right:-40px;display:flex;align-items:center;gap:8px;animation-delay:.5s}
-.hero-float-2 img{width:20px;height:20px}
-.hero-float-2 .check{color:var(--green);font-weight:700;font-size:16px}
-.hero-float-3{bottom:-10px;left:0px;display:flex;align-items:center;gap:8px;color:var(--text2);animation-delay:1s}
-.hero-float-3 .hash{color:var(--text3);font-weight:700}
-@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.hero-float-2{bottom:55px;right:-20px;display:flex;align-items:center;gap:8px;animation-delay:.8s}
+.hero-float-2 img{width:18px;height:18px}
+.hero-float-2 .check{color:var(--green);font-weight:700;font-size:15px}
+.hero-float-3{bottom:5px;left:20px;display:flex;align-items:center;gap:6px;color:var(--text2);font-size:12px;padding:6px 12px;animation-delay:1.6s}
+.hero-float-3 .hash{color:var(--orange);font-weight:700;font-size:14px}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
 
 /* STATS */
 .stats-bar{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:44px 32px}
@@ -217,7 +217,6 @@ textarea:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba
     <div class="hero-float hero-float-2">
       <img src="/badge.png" alt="">
       <span>User banned and messages deleted.</span>
-      <span class="check">&#10003;</span>
     </div>
     <div class="hero-float hero-float-3">
       <span class="hash">#</span>
