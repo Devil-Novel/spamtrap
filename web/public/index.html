@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spam Trap Dashboard</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#1a1a2e;--bg2:#16213e;--bg3:#0f3460;--surface:#1e2746;--surface2:#253355;--border:#2a3a5c;--text:#e4e6eb;--text2:#a0a8c0;--accent:#5865f2;--accent2:#4752c4;--green:#57f287;--red:#ed4245;--amber:#fee75c;--font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+
+/* Nav */
+.nav{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;justify-content:space-between}
+.nav-brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px}
+.nav-brand img{width:32px;height:32px;border-radius:50%}
+.nav-user{display:flex;align-items:center;gap:10px}
+.nav-user img{width:28px;height:28px;border-radius:50%}
+.btn{padding:8px 16px;border-radius:6px;border:none;font:500 14px var(--font);cursor:pointer;transition:all .15s}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent2)}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--surface)}
+.btn-sm{padding:6px 12px;font-size:13px}
+.btn-green{background:var(--green);color:#000}
+
+/* Layout */
+.container{max-width:960px;margin:0 auto;padding:24px}
+.page{display:none}
+.page.active{display:block}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:16px}
+.card h3{font-size:16px;margin-bottom:12px;color:var(--text)}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+
+/* Stats */
+.stat-row{display:flex;gap:12px;margin-bottom:20px}
+.stat-box{flex:1;background:var(--surface2);border-radius:8px;padding:16px;text-align:center}
+.stat-box .num{font-size:28px;font-weight:700;color:var(--accent)}
+.stat-box .label{font-size:13px;color:var(--text2);margin-top:4px}
+
+/* Guild card */
+.guild-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;cursor:pointer;transition:border-color .15s;display:flex;align-items:center;gap:12px}
+.guild-card:hover{border-color:var(--accent)}
+.guild-icon{width:44px;height:44px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--text2);flex-shrink:0}
+.guild-icon img{width:44px;height:44px;border-radius:50%}
+.guild-info{flex:1}
+.guild-info h4{font-size:15px;margin-bottom:2px}
+.guild-info span{font-size:13px;color:var(--text2)}
+.guild-badge{font-size:12px;padding:3px 8px;border-radius:10px;background:var(--surface2);color:var(--text2)}
+
+/* Detail page */
+.back-btn{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--text2);margin-bottom:16px;cursor:pointer}
+.back-btn:hover{color:var(--text)}
+.guild-header{display:flex;align-items:center;gap:14px;margin-bottom:24px}
+.guild-header .guild-icon{width:56px;height:56px;font-size:22px}
+.guild-header .guild-icon img{width:56px;height:56px}
+.guild-header h2{font-size:22px}
+.guild-header span{font-size:14px;color:var(--text2)}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:20px}
+.tab{padding:10px 16px;font:500 14px var(--font);color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+/* Recent actions */
+.action-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);font-size:14px}
+.action-row:last-child{border:none}
+.action-row .user-id{color:var(--text2);font-family:monospace;font-size:13px}
+.action-row .action-type{color:var(--amber);font-size:13px}
+.action-row .time{margin-left:auto;color:var(--text2);font-size:12px}
+
+/* Message editor */
+.msg-editor{margin-bottom:20px}
+.msg-editor label{display:block;font:500 14px var(--font);margin-bottom:6px;color:var(--text)}
+.msg-editor .hint{font-size:12px;color:var(--text2);margin-bottom:8px}
+textarea{width:100%;min-height:120px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;color:var(--text);font:14px var(--font);resize:vertical}
+textarea:focus{outline:none;border-color:var(--accent)}
+.msg-actions{display:flex;gap:8px;margin-top:12px}
+.save-status{font-size:13px;color:var(--green);margin-left:12px;opacity:0;transition:opacity .3s}
+.save-status.show{opacity:1}
+
+/* Experiment chips */
+.exp-grid{display:flex;flex-wrap:wrap;gap:8px}
+.exp-chip{padding:6px 12px;border-radius:16px;font-size:13px;border:1px solid var(--border);background:var(--surface2);color:var(--text2)}
+.exp-chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* Config items */
+.config-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
+.config-row:last-child{border:none}
+.config-label{font-size:14px;color:var(--text2)}
+.config-value{font-size:14px;font-weight:500}
+
+/* Login page */
+.login-page{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:80vh;text-align:center}
+.login-page h1{font-size:28px;margin-bottom:8px}
+.login-page p{color:var(--text2);margin-bottom:24px;max-width:400px;line-height:1.5}
+.login-page .btn{font-size:16px;padding:12px 24px}
+
+/* Loading */
+.loading{text-align:center;padding:40px;color:var(--text2)}
+.spinner{display:inline-block;width:24px;height:24px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Responsive */
+@media(max-width:600px){
+  .stat-row{flex-direction:column}
+  .nav{padding:10px 16px}
+  .container{padding:16px}
+  .guild-header h2{font-size:18px}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-brand">
+    <span>Spam Trap</span>
+  </div>
+  <div class="nav-user" id="navUser"></div>
+</nav>
+
+<!-- Login Page -->
+<div class="page" id="loginPage">
+  <div class="login-page">
+    <h1>Spam Trap Dashboard</h1>
+    <p>Manage your spam trap bot settings, view catch statistics, and customize messages across all your servers.</p>
+    <a href="/auth/discord" class="btn btn-primary">Login with Discord</a>
+  </div>
+</div>
+
+<!-- Guilds Page -->
+<div class="page" id="guildsPage">
+  <div class="container">
+    <div class="stat-row" id="overviewStats"></div>
+    <h3 style="margin-bottom:14px">Your servers</h3>
+    <div class="card-grid" id="guildList">
+      <div class="loading"><div class="spinner"></div><p style="margin-top:10px">Loading servers...</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- Guild Detail Page -->
+<div class="page" id="guildPage">
+  <div class="container">
+    <div class="back-btn" onclick="showPage('guildsPage');loadGuilds()">&#8592; Back to servers</div>
+    <div class="guild-header" id="guildHeader"></div>
+
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('stats')">Stats</div>
+      <div class="tab" onclick="switchTab('messages')">Messages</div>
+      <div class="tab" onclick="switchTab('config')">Config</div>
+    </div>
+
+    <!-- Stats Tab -->
+    <div class="tab-content active" id="tab-stats">
+      <div class="stat-row" id="guildStats"></div>
+      <div class="card">
+        <h3>Recent actions</h3>
+        <div id="recentActions"><span class="loading">No actions yet</span></div>
+      </div>
+    </div>
+
+    <!-- Messages Tab -->
+    <div class="tab-content" id="tab-messages">
+      <div class="card">
+        <h3>Customize messages</h3>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Leave a field empty to use the default message. Use template variables like <code style="background:var(--bg);padding:2px 6px;border-radius:4px">{{server:name}}</code> and <code style="background:var(--bg);padding:2px 6px;border-radius:4px">{{action:text}}</code>.</p>
+
+        <div class="msg-editor">
+          <label>Warning message <span style="font-weight:400;color:var(--text2)">(pinned in trap channel)</span></label>
+          <textarea id="msgWarning" placeholder="Leave empty for default multilingual warning"></textarea>
+        </div>
+
+        <div class="msg-editor">
+          <label>DM message <span style="font-weight:400;color:var(--text2)">(sent to caught user)</span></label>
+          <div class="hint">Variables: {{action:text}}, {{server:name}}, {{trap:channel:link}}</div>
+          <textarea id="msgDm" placeholder="Leave empty for default DM"></textarea>
+        </div>
+
+        <div class="msg-editor">
+          <label>Log message <span style="font-weight:400;color:var(--text2)">(embed description in mod log)</span></label>
+          <div class="hint">Variables: {{action:text}}, {{trap:channel:mention}}, {{server:name}}</div>
+          <textarea id="msgLog" placeholder="Leave empty for default log message"></textarea>
+        </div>
+
+        <div class="msg-actions">
+          <button class="btn btn-primary" onclick="saveMessages()">Save messages</button>
+          <button class="btn btn-ghost btn-sm" onclick="resetMessages()">Reset to defaults</button>
+          <span class="save-status" id="saveStatus">Saved!</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Config Tab -->
+    <div class="tab-content" id="tab-config">
+      <div class="card">
+        <h3>Configuration</h3>
+        <div id="configInfo"></div>
+      </div>
+      <div class="card">
+        <h3>Active experiments</h3>
+        <div class="exp-grid" id="expGrid"></div>
+        <p style="font-size:12px;color:var(--text2);margin-top:10px">Use <code style="background:var(--bg);padding:2px 4px;border-radius:3px">/spamtrap toggle</code> in Discord to change experiments.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentGuildId = null;
+let currentMessages = {};
+
+// ── Page management ──
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+// ── API helpers ──
+async function api(path) {
+  const res = await fetch(path);
+  return res.json();
+}
+async function apiPost(path, body) {
+  const res = await fetch(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+// ── Init ──
+async function init() {
+  const me = await api('/api/me');
+  if (!me.loggedIn) {
+    showPage('loginPage');
+    return;
+  }
+
+  document.getElementById('navUser').innerHTML =
+    `<img src="${me.user.avatar}" alt="">` +
+    `<span>${me.user.globalName}</span>` +
+    `<a href="/auth/logout" class="btn btn-ghost btn-sm">Logout</a>`;
+
+  showPage('guildsPage');
+  loadOverview();
+  loadGuilds();
+}
+
+async function loadOverview() {
+  const data = await api('/api/overview');
+  document.getElementById('overviewStats').innerHTML =
+    `<div class="stat-box"><div class="num">${data.totalServers}</div><div class="label">Servers</div></div>` +
+    `<div class="stat-box"><div class="num">${data.configuredServers}</div><div class="label">Active traps</div></div>` +
+    `<div class="stat-box"><div class="num">${data.totalCatches}</div><div class="label">Total catches</div></div>`;
+}
+
+async function loadGuilds() {
+  const guilds = await api('/api/guilds');
+  const el = document.getElementById('guildList');
+  if (!guilds.length) {
+    el.innerHTML = '<p style="color:var(--text2)">No servers found. Make sure the bot is invited and you have Manage Server permission.</p>';
+    return;
+  }
+  el.innerHTML = guilds.map(g =>
+    `<div class="guild-card" onclick="openGuild('${g.id}')">` +
+    `<div class="guild-icon">${g.icon ? '<img src="' + g.icon + '">' : g.name.charAt(0)}</div>` +
+    `<div class="guild-info"><h4>${esc(g.name)}</h4><span>${g.catchCount} catches &middot; ${g.action}</span></div>` +
+    `<span class="guild-badge">${g.trapChannels} trap${g.trapChannels !== 1 ? 's' : ''}</span>` +
+    `</div>`
+  ).join('');
+}
+
+async function openGuild(id) {
+  currentGuildId = id;
+  showPage('guildPage');
+
+  const [stats, messages] = await Promise.all([
+    api(`/api/guild/${id}/stats`),
+    api(`/api/guild/${id}/messages`),
+  ]);
+
+  currentMessages = messages;
+
+  // Header
+  document.getElementById('guildHeader').innerHTML =
+    `<div class="guild-icon">${stats.icon ? '<img src="' + stats.icon + '">' : stats.name.charAt(0)}</div>` +
+    `<div><h2>${esc(stats.name)}</h2><span>${stats.memberCount} members</span></div>`;
+
+  // Stats
+  document.getElementById('guildStats').innerHTML =
+    `<div class="stat-box"><div class="num">${stats.catchCount}</div><div class="label">Catches</div></div>` +
+    `<div class="stat-box"><div class="num">${stats.globalCatches}</div><div class="label">Global catches</div></div>` +
+    `<div class="stat-box"><div class="num">${stats.trapChannels.length}</div><div class="label">Trap channels</div></div>`;
+
+  // Recent actions
+  const actionsEl = document.getElementById('recentActions');
+  if (stats.recentActions.length) {
+    actionsEl.innerHTML = stats.recentActions.map(a =>
+      `<div class="action-row">` +
+      `<span class="user-id">${a.userId}</span>` +
+      `<span class="action-type">${esc(a.action)}</span>` +
+      `<span class="time">${timeAgo(a.time)}</span>` +
+      `</div>`
+    ).join('');
+  } else {
+    actionsEl.innerHTML = '<p style="color:var(--text2);padding:10px 0">No actions recorded yet.</p>';
+  }
+
+  // Messages
+  document.getElementById('msgWarning').value = messages.warning || '';
+  document.getElementById('msgDm').value = messages.dm || '';
+  document.getElementById('msgLog').value = messages.log || '';
+
+  // Config
+  const trapText = stats.trapChannels.length
+    ? stats.trapChannels.map(c => '#' + c.name).join(', ')
+    : 'Not set';
+  const logText = stats.logChannel ? '#' + stats.logChannel.name : 'Not set';
+
+  document.getElementById('configInfo').innerHTML =
+    `<div class="config-row"><span class="config-label">Trap channel(s)</span><span class="config-value">${esc(trapText)}</span></div>` +
+    `<div class="config-row"><span class="config-label">Log channel</span><span class="config-value">${esc(logText)}</span></div>` +
+    `<div class="config-row"><span class="config-label">Action</span><span class="config-value">${stats.action}</span></div>`;
+
+  // Experiments
+  const EXP_LABELS = {
+    forwardMessage:'Forward Message',reinvite:'Reinvite',noDm:'No DM',noWarning:'No Warning',
+    channelWarmer:'Channel Warmer',randomChannelName:'Random Name',randomNameChaos:'Random Chaos',
+    timeoutFirst:'Timeout First',onlyRecentDelete:'Recent Delete',manyTraps:'Many Traps',ensureDeletion:'Ensure Deletion'
+  };
+  document.getElementById('expGrid').innerHTML = Object.entries(stats.experiments)
+    .map(([k, v]) => `<span class="exp-chip ${v ? 'on' : ''}">${EXP_LABELS[k] || k}</span>`)
+    .join('');
+
+  // Reset to stats tab
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === 0));
+  document.querySelectorAll('.tab-content').forEach((t, i) => t.classList.toggle('active', i === 0));
+}
+
+async function saveMessages() {
+  const body = {
+    warning: document.getElementById('msgWarning').value.trim(),
+    dm: document.getElementById('msgDm').value.trim(),
+    log: document.getElementById('msgLog').value.trim(),
+  };
+  await apiPost(`/api/guild/${currentGuildId}/messages`, body);
+  const status = document.getElementById('saveStatus');
+  status.classList.add('show');
+  setTimeout(() => status.classList.remove('show'), 2000);
+}
+
+function resetMessages() {
+  document.getElementById('msgWarning').value = '';
+  document.getElementById('msgDm').value = '';
+  document.getElementById('msgLog').value = '';
+}
+
+// ── Helpers ──
+function esc(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function timeAgo(ts) {
+  const diff = (Date.now() - ts) / 1000;
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+  return Math.floor(diff / 86400) + 'd ago';
+}
+
+init();
+</script>
+</body>
+</html>

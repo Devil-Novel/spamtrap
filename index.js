@@ -297,8 +297,13 @@ async function dailyTick() {
 
 // ---------- Ready ----------
 
+const { startDashboard } = require('./web/server');
+
 client.once('ready', async () => {
   console.log(`Spam Trap is running as ${client.user.tag}`);
+
+  // Start the web dashboard
+  startDashboard(client);
 
   // Register slash commands
   const { commands } = require('./commands');
