@@ -3,12 +3,12 @@ const session = require('cookie-session');
 const path = require('path');
 const store = require('../lib/store');
 
-const CLIENT_ID = process.env.CLIENT_ID;
-const CLIENT_SECRET = process.env.CLIENT_SECRET;
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
-const REDIRECT_URI = `${BASE_URL}/auth/callback`;
-
 function startDashboard(client) {
+  const CLIENT_ID = process.env.CLIENT_ID || client.user.id;
+  const CLIENT_SECRET = process.env.CLIENT_SECRET;
+  const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
+  const REDIRECT_URI = `${BASE_URL}/auth/callback`;
+
   const app = express();
   app.use(express.json());
   app.use(
@@ -211,6 +211,8 @@ function startDashboard(client) {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
     console.log(`[DASHBOARD] Running at ${BASE_URL}`);
+    console.log(`[DASHBOARD] OAuth client_id: ${CLIENT_ID}`);
+    console.log(`[DASHBOARD] Redirect URI: ${REDIRECT_URI}`);
   });
 }
 
