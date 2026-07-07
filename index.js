@@ -51,6 +51,17 @@ function randomChaosName() {
 }
 
 function hasPermission(interaction) {
+  // Server owner always has permission
+  if (interaction.guild.ownerId === interaction.user.id) return true;
+
+  // Check allowed roles first (if configured)
+  const g = store.getGuild(interaction.guild.id);
+  const allowedRoles = g.allowedRoles || [];
+  if (allowedRoles.length > 0) {
+    return interaction.member.roles.cache.some((r) => allowedRoles.includes(r.id));
+  }
+
+  // Fallback: BanMembers + ManageGuild
   return (
     interaction.memberPermissions?.has(PermissionsBitField.Flags.BanMembers) &&
     interaction.memberPermissions?.has(PermissionsBitField.Flags.ManageGuild)
@@ -90,6 +101,12 @@ function buildStatusEmbed(guildId, guild) {
         value: `Warning: ${g.customMessages.warning ? 'custom' : 'default'} | DM: ${
           g.customMessages.dm ? 'custom' : 'default'
         } | Log: ${g.customMessages.log ? 'custom' : 'default'}`,
+      },
+      {
+        name: 'Allowed roles',
+        value: (g.allowedRoles || []).length
+          ? (g.allowedRoles || []).map((id) => `<@&${id}>`).join(', ')
+          : 'Default (Ban Members + Manage Server)',
       }
     );
 }
@@ -463,6 +480,73 @@ client.on('interactionCreate', async (interaction) => {
           g.trapChannels = [];
           store.saveGuild(guildId, g);
           return interaction.reply(`${E.done} Spam Trap disabled. Other settings were kept — use \`/spamtrap channel\` to re-enable.`);
+        }
+
+        if (sub === 'info') {
+          const infoEmbed = new EmbedBuilder()
+            .setTitle(`Spam Trap ${E.protection}`)
+            .setColor(0xf47521)
+            .setDescription('The Discord bot that stops spammers before they spread.\nHere are all available commands:')
+            .addFields(
+              { name: `${E.protection} /spamtrap channel #channel`, value: 'Set the trap channel. Posts and pins a multilingual warning.', inline: false },
+              { name: `${E.done} /spamtrap log #channel`, value: 'Set the mod log channel for action reports.', inline: false },
+              { name: `${E.done} /spamtrap action`, value: 'Choose softban, ban, or disabled.', inline: false },
+              { name: `${E.experiments} /spamtrap toggle`, value: 'Enable or disable experiments via dropdown.', inline: false },
+              { name: `${E.experiments} /spamtrap experiments`, value: 'View all experiments and their status.', inline: false },
+              { name: `${E.protection} /spamtrap status`, value: 'View the full current configuration.', inline: false },
+              { name: `${E.dashboard} /spamtrap stats`, value: 'View catch statistics and recent actions.', inline: false },
+              { name: `${E.protection} /spamtrap channels`, value: 'Set up to 5 trap channels (needs Many Traps).', inline: false },
+              { name: `${E.done} /spamtrap-messages`, value: 'Customize warning, DM, and log messages.', inline: false },
+              { name: `${E.done} /spamtrap disable`, value: 'Turn off the trap. Keeps settings for later.', inline: false },
+              { name: `${E.easy} /spamtrap info`, value: 'Show this help message.', inline: false },
+              { name: `${E.safety} /spamtrap addrole @role`, value: 'Add a role that can manage the bot.', inline: false },
+              { name: `${E.safety} /spamtrap removerole @role`, value: 'Remove a role from managing the bot.', inline: false },
+              { name: `${E.safety} /spamtrap roles`, value: 'View all roles that can manage the bot.', inline: false },
+            )
+            .setFooter({ text: 'spamtrap-production-b8aa.up.railway.app' });
+          return interaction.reply({ embeds: [infoEmbed], ephemeral: true });
+        }
+
+        // ── Role management (admin only) ──
+        if (sub === 'addrole') {
+          // Only server owner or existing admins can manage roles
+          if (interaction.guild.ownerId !== interaction.user.id &&
+              !interaction.memberPermissions?.has(PermissionsBitField.Flags.Administrator)) {
+            return interaction.reply({ content: `${E.protection} Only the server owner or administrators can manage bot roles.`, ephemeral: true });
+          }
+          const role = interaction.options.getRole('role');
+          if (!g.allowedRoles) g.allowedRoles = [];
+          if (g.allowedRoles.includes(role.id)) {
+            return interaction.reply({ content: `${E.done} <@&${role.id}> is already an allowed role.`, ephemeral: true });
+          }
+          g.allowedRoles.push(role.id);
+          store.saveGuild(guildId, g);
+          return interaction.reply({ content: `${E.done} <@&${role.id}> can now manage Spam Trap.`, ephemeral: true });
+        }
+
+        if (sub === 'removerole') {
+          if (interaction.guild.ownerId !== interaction.user.id &&
+              !interaction.memberPermissions?.has(PermissionsBitField.Flags.Administrator)) {
+            return interaction.reply({ content: `${E.protection} Only the server owner or administrators can manage bot roles.`, ephemeral: true });
+          }
+          const role = interaction.options.getRole('role');
+          if (!g.allowedRoles) g.allowedRoles = [];
+          g.allowedRoles = g.allowedRoles.filter((id) => id !== role.id);
+          store.saveGuild(guildId, g);
+          return interaction.reply({ content: `${E.done} <@&${role.id}> removed from Spam Trap roles.`, ephemeral: true });
+        }
+
+        if (sub === 'roles') {
+          const roles = (g.allowedRoles || []).map((id) => `<@&${id}>`).join(', ') || 'Not set (using default: Ban Members + Manage Server)';
+          const rolesEmbed = new EmbedBuilder()
+            .setTitle(`Spam Trap Roles ${E.safety}`)
+            .setColor(0xf47521)
+            .setDescription('Roles that can manage Spam Trap commands:')
+            .addFields(
+              { name: 'Allowed Roles', value: roles },
+              { name: 'How it works', value: 'If no roles are set, anyone with **Ban Members + Manage Server** can use the bot.\nOnce you add roles, **only those roles** can use commands.\nThe server owner always has access.' }
+            );
+          return interaction.reply({ embeds: [rolesEmbed], ephemeral: true });
         }
       }
       return;

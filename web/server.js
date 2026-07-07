@@ -153,6 +153,10 @@ function startDashboard(client) {
         ? { id: config.logChannel, name: guild?.channels.cache.get(config.logChannel)?.name || 'unknown' }
         : null,
       experiments: config.experiments,
+      allowedRoles: (config.allowedRoles || []).map((id) => {
+        const role = guild?.roles.cache.get(id);
+        return { id, name: role?.name || 'Unknown' };
+      }),
       recentActions: (config.recentActions || []).map((a) => ({
         userId: a.userId,
         action: a.action,
@@ -188,6 +192,41 @@ function startDashboard(client) {
     config.customMessages.log = log || null;
     store.saveGuild(guildId, config);
 
+    res.json({ success: true });
+  });
+
+  // ── API: get roles ──
+  app.get('/api/guild/:id/roles', (req, res) => {
+    if (!req.session.accessToken) return res.status(401).json({ error: 'Not logged in' });
+    const config = store.getGuild(req.params.id);
+    const guild = client.guilds.cache.get(req.params.id);
+
+    // Get all server roles for the dropdown
+    const serverRoles = guild
+      ? guild.roles.cache
+          .filter((r) => r.id !== guild.id && !r.managed) // exclude @everyone and bot roles
+          .sort((a, b) => b.position - a.position)
+          .map((r) => ({ id: r.id, name: r.name, color: r.hexColor }))
+      : [];
+
+    const allowedRoles = (config.allowedRoles || []).map((id) => {
+      const role = guild?.roles.cache.get(id);
+      return { id, name: role?.name || 'Unknown', color: role?.hexColor || '#99aab5' };
+    });
+
+    res.json({ allowedRoles, serverRoles });
+  });
+
+  // ── API: update roles ──
+  app.post('/api/guild/:id/roles', (req, res) => {
+    if (!req.session.accessToken) return res.status(401).json({ error: 'Not logged in' });
+    const config = store.getGuild(req.params.id);
+    const { allowedRoles } = req.body;
+
+    if (!Array.isArray(allowedRoles)) return res.status(400).json({ error: 'allowedRoles must be an array' });
+
+    config.allowedRoles = allowedRoles;
+    store.saveGuild(req.params.id, config);
     res.json({ success: true });
   });
 

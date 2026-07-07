@@ -47,7 +47,17 @@ const commands = [
     .addSubcommand((sub) => sub.setName('experiments').setDescription('View all experiments and their status'))
     .addSubcommand((sub) => sub.setName('status').setDescription('View the current configuration'))
     .addSubcommand((sub) => sub.setName('stats').setDescription('View moderation statistics'))
-    .addSubcommand((sub) => sub.setName('disable').setDescription('Turn off the trap (keeps other settings)')),
+    .addSubcommand((sub) => sub.setName('disable').setDescription('Turn off the trap (keeps other settings)'))
+    .addSubcommand((sub) => sub.setName('info').setDescription('Show all commands and how to use the bot'))
+    .addSubcommand((sub) =>
+      sub.setName('addrole').setDescription('Add a role that can manage Spam Trap')
+        .addRoleOption((opt) => opt.setName('role').setDescription('The role to add').setRequired(true))
+    )
+    .addSubcommand((sub) =>
+      sub.setName('removerole').setDescription('Remove a role from managing Spam Trap')
+        .addRoleOption((opt) => opt.setName('role').setDescription('The role to remove').setRequired(true))
+    )
+    .addSubcommand((sub) => sub.setName('roles').setDescription('View all roles that can manage Spam Trap')),
 
   new SlashCommandBuilder()
     .setName('spamtrap-messages')
