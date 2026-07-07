@@ -278,8 +278,7 @@ async function logToChannel(guild, guildConfig, text, embed) {
 async function postWarning(channel, guildConfig) {
   if (guildConfig.experiments.noWarning) return;
   const text = guildConfig.customMessages.warning || DEFAULT_WARNING;
-  const msg = await channel.send(text);
-  await msg.pin().catch(() => {});
+  await channel.send(text);
 }
 
 // ---------- Daily tasks: channel warmer + renaming ----------
@@ -381,7 +380,7 @@ client.on('interactionCreate', async (interaction) => {
 
         const warningInput = new TextInputBuilder()
           .setCustomId('warning')
-          .setLabel('Warning message (posted + pinned)')
+          .setLabel('Warning message (posted in trap channel)')
           .setStyle(TextInputStyle.Paragraph)
           .setRequired(false)
           .setValue(g.customMessages.warning || '');
@@ -488,7 +487,7 @@ client.on('interactionCreate', async (interaction) => {
             .setColor(0xf47521)
             .setDescription('The Discord bot that stops spammers before they spread.\nHere are all available commands:')
             .addFields(
-              { name: `${E.protection} /spamtrap channel #channel`, value: 'Set the trap channel. Posts and pins a multilingual warning.', inline: false },
+              { name: `${E.protection} /spamtrap channel #channel`, value: 'Set the trap channel. Posts a multilingual warning.', inline: false },
               { name: `${E.done} /spamtrap log #channel`, value: 'Set the mod log channel for action reports.', inline: false },
               { name: `${E.done} /spamtrap action`, value: 'Choose softban, ban, or disabled.', inline: false },
               { name: `${E.experiments} /spamtrap toggle`, value: 'Enable or disable experiments via dropdown.', inline: false },
@@ -621,7 +620,7 @@ client.on('guildCreate', async (guild) => {
     g.trapChannels = [channel.id];
     store.saveGuild(guild.id, g);
 
-    // Post and pin the warning
+    // Post the warning
     await postWarning(channel, g);
 
     console.log(`[JOIN] Setup complete for ${guild.name}`);
