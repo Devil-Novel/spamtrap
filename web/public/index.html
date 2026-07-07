@@ -4,25 +4,46 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Spam Trap Dashboard</title>
+<link rel="icon" href="/badge.png" type="image/png">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#1a1a2e;--bg2:#16213e;--bg3:#0f3460;--surface:#1e2746;--surface2:#253355;--border:#2a3a5c;--text:#e4e6eb;--text2:#a0a8c0;--accent:#5865f2;--accent2:#4752c4;--green:#57f287;--red:#ed4245;--amber:#fee75c;--font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#1c2333;
+  --surface:#1a2030;--surface2:#222d40;--surface3:#2a3750;
+  --border:#2d3a50;--border2:#3d4f6a;
+  --text:#e6edf3;--text2:#8b949e;--text3:#6e7681;
+  --orange:#f47521;--orange2:#ff8c3a;--orange-dim:#3d2510;
+  --red:#ed4245;--red-dim:#3d1516;
+  --green:#57f287;--green-dim:#153d22;
+  --amber:#ffa726;--amber-dim:#3d2e10;
+  --font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+}
 body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh}
-a{color:var(--accent);text-decoration:none}
+a{color:var(--orange);text-decoration:none}
+code{background:var(--bg);padding:2px 6px;border-radius:4px;font-size:13px}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:8px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:4px}
 
 /* Nav */
-.nav{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;justify-content:space-between}
-.nav-brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px}
-.nav-brand img{width:32px;height:32px;border-radius:50%}
+.nav{background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;backdrop-filter:blur(12px)}
+.nav-brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px}
+.nav-brand img{height:32px;border-radius:6px}
+.nav-brand span{background:linear-gradient(135deg,var(--orange),var(--red));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .nav-user{display:flex;align-items:center;gap:10px}
-.nav-user img{width:28px;height:28px;border-radius:50%}
-.btn{padding:8px 16px;border-radius:6px;border:none;font:500 14px var(--font);cursor:pointer;transition:all .15s}
-.btn-primary{background:var(--accent);color:#fff}
-.btn-primary:hover{background:var(--accent2)}
-.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}
-.btn-ghost:hover{background:var(--surface)}
+.nav-user img{width:28px;height:28px;border-radius:50%;border:2px solid var(--border)}
+.nav-user span{font-size:14px;color:var(--text2)}
+
+/* Buttons */
+.btn{padding:8px 18px;border-radius:8px;border:none;font:600 14px var(--font);cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:linear-gradient(135deg,var(--orange),#e8651a);color:#fff;box-shadow:0 2px 12px rgba(244,117,33,.25)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(244,117,33,.35)}
+.btn-ghost{background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--surface3);color:var(--text)}
 .btn-sm{padding:6px 12px;font-size:13px}
-.btn-green{background:var(--green);color:#000}
+.btn-green{background:linear-gradient(135deg,var(--green),#3dd677);color:#000}
 
 /* Layout */
 .container{max-width:960px;margin:0 auto;padding:24px}
@@ -30,29 +51,31 @@ a{color:var(--accent);text-decoration:none}
 .page.active{display:block}
 
 /* Cards */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:16px}
-.card h3{font-size:16px;margin-bottom:12px;color:var(--text)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;transition:border-color .2s}
+.card h3{font-size:15px;margin-bottom:12px;color:var(--text);display:flex;align-items:center;gap:8px}
+.card h3 img{width:18px;height:18px}
 .card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
 
 /* Stats */
 .stat-row{display:flex;gap:12px;margin-bottom:20px}
-.stat-box{flex:1;background:var(--surface2);border-radius:8px;padding:16px;text-align:center}
-.stat-box .num{font-size:28px;font-weight:700;color:var(--accent)}
+.stat-box{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;text-align:center;position:relative;overflow:hidden}
+.stat-box::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--orange),var(--red))}
+.stat-box .num{font-size:30px;font-weight:800;background:linear-gradient(135deg,var(--orange),var(--amber));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .stat-box .label{font-size:13px;color:var(--text2);margin-top:4px}
 
 /* Guild card */
-.guild-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;cursor:pointer;transition:border-color .15s;display:flex;align-items:center;gap:12px}
-.guild-card:hover{border-color:var(--accent)}
-.guild-icon{width:44px;height:44px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--text2);flex-shrink:0}
-.guild-icon img{width:44px;height:44px;border-radius:50%}
+.guild-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:12px}
+.guild-card:hover{border-color:var(--orange);transform:translateY(-2px);box-shadow:0 4px 20px rgba(244,117,33,.1)}
+.guild-icon{width:46px;height:46px;border-radius:12px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--text2);flex-shrink:0;border:1px solid var(--border)}
+.guild-icon img{width:46px;height:46px;border-radius:12px}
 .guild-info{flex:1}
-.guild-info h4{font-size:15px;margin-bottom:2px}
+.guild-info h4{font-size:15px;margin-bottom:3px}
 .guild-info span{font-size:13px;color:var(--text2)}
-.guild-badge{font-size:12px;padding:3px 8px;border-radius:10px;background:var(--surface2);color:var(--text2)}
+.guild-badge{font-size:12px;padding:4px 10px;border-radius:10px;background:var(--orange-dim);color:var(--orange);font-weight:600;border:1px solid rgba(244,117,33,.2)}
 
 /* Detail page */
-.back-btn{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--text2);margin-bottom:16px;cursor:pointer}
-.back-btn:hover{color:var(--text)}
+.back-btn{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--text2);margin-bottom:16px;cursor:pointer;padding:6px 0}
+.back-btn:hover{color:var(--orange)}
 .guild-header{display:flex;align-items:center;gap:14px;margin-bottom:24px}
 .guild-header .guild-icon{width:56px;height:56px;font-size:22px}
 .guild-header .guild-icon img{width:56px;height:56px}
@@ -60,58 +83,68 @@ a{color:var(--accent);text-decoration:none}
 .guild-header span{font-size:14px;color:var(--text2)}
 
 /* Tabs */
-.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:20px}
-.tab{padding:10px 16px;font:500 14px var(--font);color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+.tabs{display:flex;gap:2px;background:var(--surface);border-radius:10px;padding:4px;margin-bottom:20px;border:1px solid var(--border)}
+.tab{padding:10px 18px;font:600 14px var(--font);color:var(--text2);cursor:pointer;border-radius:8px;transition:all .15s;text-align:center;flex:1}
 .tab:hover{color:var(--text)}
-.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab.active{background:linear-gradient(135deg,var(--orange),#e8651a);color:#fff;box-shadow:0 2px 8px rgba(244,117,33,.3)}
 .tab-content{display:none}
 .tab-content.active{display:block}
 
 /* Recent actions */
-.action-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);font-size:14px}
+.action-row{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--border);font-size:14px}
 .action-row:last-child{border:none}
-.action-row .user-id{color:var(--text2);font-family:monospace;font-size:13px}
-.action-row .action-type{color:var(--amber);font-size:13px}
-.action-row .time{margin-left:auto;color:var(--text2);font-size:12px}
+.action-row .user-id{color:var(--text2);font-family:monospace;font-size:13px;background:var(--bg);padding:2px 8px;border-radius:4px}
+.action-row .action-type{color:var(--amber);font-size:13px;font-weight:500}
+.action-row .time{margin-left:auto;color:var(--text3);font-size:12px}
 
 /* Message editor */
 .msg-editor{margin-bottom:20px}
-.msg-editor label{display:block;font:500 14px var(--font);margin-bottom:6px;color:var(--text)}
-.msg-editor .hint{font-size:12px;color:var(--text2);margin-bottom:8px}
-textarea{width:100%;min-height:120px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;color:var(--text);font:14px var(--font);resize:vertical}
-textarea:focus{outline:none;border-color:var(--accent)}
-.msg-actions{display:flex;gap:8px;margin-top:12px}
-.save-status{font-size:13px;color:var(--green);margin-left:12px;opacity:0;transition:opacity .3s}
+.msg-editor label{display:flex;align-items:center;gap:6px;font:600 14px var(--font);margin-bottom:6px;color:var(--text)}
+.msg-editor .hint{font-size:12px;color:var(--text3);margin-bottom:8px;padding-left:2px}
+textarea{width:100%;min-height:120px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;color:var(--text);font:14px var(--font);resize:vertical;transition:border-color .2s}
+textarea:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba(244,117,33,.1)}
+textarea::placeholder{color:var(--text3)}
+.msg-actions{display:flex;align-items:center;gap:8px;margin-top:14px}
+.save-status{font-size:13px;color:var(--green);margin-left:8px;opacity:0;transition:opacity .3s;font-weight:600}
 .save-status.show{opacity:1}
 
 /* Experiment chips */
 .exp-grid{display:flex;flex-wrap:wrap;gap:8px}
-.exp-chip{padding:6px 12px;border-radius:16px;font-size:13px;border:1px solid var(--border);background:var(--surface2);color:var(--text2)}
-.exp-chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.exp-chip{padding:7px 14px;border-radius:20px;font-size:13px;font-weight:500;border:1px solid var(--border);background:var(--surface2);color:var(--text3);transition:all .2s}
+.exp-chip.on{background:var(--orange-dim);border-color:rgba(244,117,33,.3);color:var(--orange)}
 
 /* Config items */
-.config-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
+.config-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)}
 .config-row:last-child{border:none}
 .config-label{font-size:14px;color:var(--text2)}
-.config-value{font-size:14px;font-weight:500}
+.config-value{font-size:14px;font-weight:600;color:var(--text)}
 
 /* Login page */
-.login-page{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:80vh;text-align:center}
-.login-page h1{font-size:28px;margin-bottom:8px}
-.login-page p{color:var(--text2);margin-bottom:24px;max-width:400px;line-height:1.5}
-.login-page .btn{font-size:16px;padding:12px 24px}
+.login-page{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:85vh;text-align:center;position:relative}
+.login-bg{position:absolute;top:0;left:0;right:0;height:300px;background:url('/banner.png') center/cover no-repeat;opacity:.3;mask-image:linear-gradient(to bottom,black,transparent)}
+.login-content{position:relative;z-index:1}
+.login-logo{width:140px;height:140px;border-radius:20px;margin-bottom:20px;box-shadow:0 8px 40px rgba(244,117,33,.2);border:2px solid var(--border)}
+.login-page h1{font-size:28px;margin-bottom:8px;background:linear-gradient(135deg,var(--text),var(--text2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.login-page p{color:var(--text2);margin-bottom:28px;max-width:420px;line-height:1.6;font-size:15px}
+.login-page .btn{font-size:16px;padding:14px 28px;border-radius:10px}
+
+/* Section headers */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.section-header h3{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px}
 
 /* Loading */
 .loading{text-align:center;padding:40px;color:var(--text2)}
-.spinner{display:inline-block;width:24px;height:24px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite}
+.spinner{display:inline-block;width:24px;height:24px;border:3px solid var(--border);border-top-color:var(--orange);border-radius:50%;animation:spin .6s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* Responsive */
 @media(max-width:600px){
   .stat-row{flex-direction:column}
-  .nav{padding:10px 16px}
+  .nav{padding:10px 14px}
   .container{padding:16px}
   .guild-header h2{font-size:18px}
+  .tabs{flex-direction:column}
+  .login-logo{width:100px;height:100px}
 }
 </style>
 </head>
@@ -119,6 +152,7 @@ textarea:focus{outline:none;border-color:var(--accent)}
 
 <nav class="nav">
   <div class="nav-brand">
+    <img src="/badge.png" alt="Spam Trap">
     <span>Spam Trap</span>
   </div>
   <div class="nav-user" id="navUser"></div>
@@ -127,9 +161,16 @@ textarea:focus{outline:none;border-color:var(--accent)}
 <!-- Login Page -->
 <div class="page" id="loginPage">
   <div class="login-page">
-    <h1>Spam Trap Dashboard</h1>
-    <p>Manage your spam trap bot settings, view catch statistics, and customize messages across all your servers.</p>
-    <a href="/auth/discord" class="btn btn-primary">Login with Discord</a>
+    <div class="login-bg"></div>
+    <div class="login-content">
+      <img src="/logo.png" alt="Spam Trap" class="login-logo">
+      <h1>Spam Trap Dashboard</h1>
+      <p>Manage your spam trap bot settings, view catch statistics, and customize messages across all your servers.</p>
+      <a href="/auth/discord" class="btn btn-primary">
+        <svg width="20" height="15" viewBox="0 0 71 55" fill="none"><path d="M60.1 4.9A58.5 58.5 0 0045.4.2a.2.2 0 00-.2.1 41 41 0 00-1.8 3.7 54 54 0 00-16.2 0A37 37 0 0025.3.3a.2.2 0 00-.2-.1A58.4 58.4 0 0010.4 5a.2.2 0 00-.1 0A59.7 59.7 0 00.3 45.3a.3.3 0 000 .2 58.9 58.9 0 0017.7 9a.2.2 0 00.3-.1 42 42 0 003.6-5.9.2.2 0 00-.1-.3 38.8 38.8 0 01-5.5-2.7.2.2 0 01 0-.4l1.1-.9a.2.2 0 01.2 0 42 42 0 0035.8 0 .2.2 0 01.3 0l1 .9a.2.2 0 010 .4 36.4 36.4 0 01-5.5 2.6.2.2 0 00-.1.4 47.2 47.2 0 003.6 5.8.2.2 0 00.3.1A58.7 58.7 0 0070.6 45.5a.2.2 0 000-.2A59.2 59.2 0 0060.1 5zM23.7 37.3c-3.5 0-6.4-3.2-6.4-7.1s2.8-7.2 6.4-7.2 6.5 3.2 6.4 7.2c0 3.9-2.8 7.1-6.4 7.1zm23.6 0c-3.5 0-6.4-3.2-6.4-7.1s2.8-7.2 6.4-7.2 6.5 3.2 6.4 7.2c0 3.9-2.8 7.1-6.4 7.1z" fill="white"/></svg>
+        Login with Discord
+      </a>
+    </div>
   </div>
 </div>
 
@@ -137,7 +178,9 @@ textarea:focus{outline:none;border-color:var(--accent)}
 <div class="page" id="guildsPage">
   <div class="container">
     <div class="stat-row" id="overviewStats"></div>
-    <h3 style="margin-bottom:14px">Your servers</h3>
+    <div class="section-header">
+      <h3><img src="/badge.png" style="width:20px;height:20px"> Your servers</h3>
+    </div>
     <div class="card-grid" id="guildList">
       <div class="loading"><div class="spinner"></div><p style="margin-top:10px">Loading servers...</p></div>
     </div>
@@ -151,16 +194,16 @@ textarea:focus{outline:none;border-color:var(--accent)}
     <div class="guild-header" id="guildHeader"></div>
 
     <div class="tabs">
-      <div class="tab active" onclick="switchTab('stats')">Stats</div>
-      <div class="tab" onclick="switchTab('messages')">Messages</div>
-      <div class="tab" onclick="switchTab('config')">Config</div>
+      <div class="tab active" onclick="switchTab('stats',this)">Stats</div>
+      <div class="tab" onclick="switchTab('messages',this)">Messages</div>
+      <div class="tab" onclick="switchTab('config',this)">Config</div>
     </div>
 
     <!-- Stats Tab -->
     <div class="tab-content active" id="tab-stats">
       <div class="stat-row" id="guildStats"></div>
       <div class="card">
-        <h3>Recent actions</h3>
+        <h3><img src="/badge.png"> Recent actions</h3>
         <div id="recentActions"><span class="loading">No actions yet</span></div>
       </div>
     </div>
@@ -168,22 +211,22 @@ textarea:focus{outline:none;border-color:var(--accent)}
     <!-- Messages Tab -->
     <div class="tab-content" id="tab-messages">
       <div class="card">
-        <h3>Customize messages</h3>
-        <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Leave a field empty to use the default message. Use template variables like <code style="background:var(--bg);padding:2px 6px;border-radius:4px">{{server:name}}</code> and <code style="background:var(--bg);padding:2px 6px;border-radius:4px">{{action:text}}</code>.</p>
+        <h3><img src="/badge.png"> Customize messages</h3>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:18px;line-height:1.5">Leave a field empty to use the default message. Use template variables like <code>{{server:name}}</code> and <code>{{action:text}}</code>.</p>
 
         <div class="msg-editor">
-          <label>Warning message <span style="font-weight:400;color:var(--text2)">(pinned in trap channel)</span></label>
+          <label>Warning message <span style="font-weight:400;color:var(--text3);font-size:13px">(pinned in trap channel)</span></label>
           <textarea id="msgWarning" placeholder="Leave empty for default multilingual warning"></textarea>
         </div>
 
         <div class="msg-editor">
-          <label>DM message <span style="font-weight:400;color:var(--text2)">(sent to caught user)</span></label>
+          <label>DM message <span style="font-weight:400;color:var(--text3);font-size:13px">(sent to caught user)</span></label>
           <div class="hint">Variables: {{action:text}}, {{server:name}}, {{trap:channel:link}}</div>
           <textarea id="msgDm" placeholder="Leave empty for default DM"></textarea>
         </div>
 
         <div class="msg-editor">
-          <label>Log message <span style="font-weight:400;color:var(--text2)">(embed description in mod log)</span></label>
+          <label>Log message <span style="font-weight:400;color:var(--text3);font-size:13px">(embed description in mod log)</span></label>
           <div class="hint">Variables: {{action:text}}, {{trap:channel:mention}}, {{server:name}}</div>
           <textarea id="msgLog" placeholder="Leave empty for default log message"></textarea>
         </div>
@@ -199,13 +242,13 @@ textarea:focus{outline:none;border-color:var(--accent)}
     <!-- Config Tab -->
     <div class="tab-content" id="tab-config">
       <div class="card">
-        <h3>Configuration</h3>
+        <h3><img src="/badge.png"> Configuration</h3>
         <div id="configInfo"></div>
       </div>
       <div class="card">
-        <h3>Active experiments</h3>
+        <h3><img src="/badge.png"> Experiments</h3>
         <div class="exp-grid" id="expGrid"></div>
-        <p style="font-size:12px;color:var(--text2);margin-top:10px">Use <code style="background:var(--bg);padding:2px 4px;border-radius:3px">/spamtrap toggle</code> in Discord to change experiments.</p>
+        <p style="font-size:12px;color:var(--text3);margin-top:12px">Use <code>/spamtrap toggle</code> in Discord to change experiments.</p>
       </div>
     </div>
   </div>
@@ -215,20 +258,18 @@ textarea:focus{outline:none;border-color:var(--accent)}
 let currentGuildId = null;
 let currentMessages = {};
 
-// ── Page management ──
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
 }
 
-function switchTab(name) {
+function switchTab(name, el) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  event.target.classList.add('active');
+  el.classList.add('active');
   document.getElementById('tab-' + name).classList.add('active');
 }
 
-// ── API helpers ──
 async function api(path) {
   const res = await fetch(path);
   return res.json();
@@ -242,13 +283,9 @@ async function apiPost(path, body) {
   return res.json();
 }
 
-// ── Init ──
 async function init() {
   const me = await api('/api/me');
-  if (!me.loggedIn) {
-    showPage('loginPage');
-    return;
-  }
+  if (!me.loggedIn) { showPage('loginPage'); return; }
 
   document.getElementById('navUser').innerHTML =
     `<img src="${me.user.avatar}" alt="">` +
@@ -277,7 +314,7 @@ async function loadGuilds() {
   }
   el.innerHTML = guilds.map(g =>
     `<div class="guild-card" onclick="openGuild('${g.id}')">` +
-    `<div class="guild-icon">${g.icon ? '<img src="' + g.icon + '">' : g.name.charAt(0)}</div>` +
+    `<div class="guild-icon">${g.icon ? '<img src="' + g.icon + '">' : esc(g.name).charAt(0)}</div>` +
     `<div class="guild-info"><h4>${esc(g.name)}</h4><span>${g.catchCount} catches &middot; ${g.action}</span></div>` +
     `<span class="guild-badge">${g.trapChannels} trap${g.trapChannels !== 1 ? 's' : ''}</span>` +
     `</div>`
@@ -292,75 +329,54 @@ async function openGuild(id) {
     api(`/api/guild/${id}/stats`),
     api(`/api/guild/${id}/messages`),
   ]);
-
   currentMessages = messages;
 
-  // Header
   document.getElementById('guildHeader').innerHTML =
-    `<div class="guild-icon">${stats.icon ? '<img src="' + stats.icon + '">' : stats.name.charAt(0)}</div>` +
+    `<div class="guild-icon">${stats.icon ? '<img src="' + stats.icon + '">' : esc(stats.name).charAt(0)}</div>` +
     `<div><h2>${esc(stats.name)}</h2><span>${stats.memberCount} members</span></div>`;
 
-  // Stats
   document.getElementById('guildStats').innerHTML =
     `<div class="stat-box"><div class="num">${stats.catchCount}</div><div class="label">Catches</div></div>` +
     `<div class="stat-box"><div class="num">${stats.globalCatches}</div><div class="label">Global catches</div></div>` +
     `<div class="stat-box"><div class="num">${stats.trapChannels.length}</div><div class="label">Trap channels</div></div>`;
 
-  // Recent actions
   const actionsEl = document.getElementById('recentActions');
   if (stats.recentActions.length) {
     actionsEl.innerHTML = stats.recentActions.map(a =>
-      `<div class="action-row">` +
-      `<span class="user-id">${a.userId}</span>` +
-      `<span class="action-type">${esc(a.action)}</span>` +
-      `<span class="time">${timeAgo(a.time)}</span>` +
-      `</div>`
+      `<div class="action-row"><span class="user-id">${a.userId}</span><span class="action-type">${esc(a.action)}</span><span class="time">${timeAgo(a.time)}</span></div>`
     ).join('');
   } else {
-    actionsEl.innerHTML = '<p style="color:var(--text2);padding:10px 0">No actions recorded yet.</p>';
+    actionsEl.innerHTML = '<p style="color:var(--text3);padding:10px 0">No actions recorded yet.</p>';
   }
 
-  // Messages
   document.getElementById('msgWarning').value = messages.warning || '';
   document.getElementById('msgDm').value = messages.dm || '';
   document.getElementById('msgLog').value = messages.log || '';
 
-  // Config
-  const trapText = stats.trapChannels.length
-    ? stats.trapChannels.map(c => '#' + c.name).join(', ')
-    : 'Not set';
+  const trapText = stats.trapChannels.length ? stats.trapChannels.map(c => '#' + c.name).join(', ') : 'Not set';
   const logText = stats.logChannel ? '#' + stats.logChannel.name : 'Not set';
-
   document.getElementById('configInfo').innerHTML =
     `<div class="config-row"><span class="config-label">Trap channel(s)</span><span class="config-value">${esc(trapText)}</span></div>` +
     `<div class="config-row"><span class="config-label">Log channel</span><span class="config-value">${esc(logText)}</span></div>` +
     `<div class="config-row"><span class="config-label">Action</span><span class="config-value">${stats.action}</span></div>`;
 
-  // Experiments
-  const EXP_LABELS = {
-    forwardMessage:'Forward Message',reinvite:'Reinvite',noDm:'No DM',noWarning:'No Warning',
-    channelWarmer:'Channel Warmer',randomChannelName:'Random Name',randomNameChaos:'Random Chaos',
-    timeoutFirst:'Timeout First',onlyRecentDelete:'Recent Delete',manyTraps:'Many Traps',ensureDeletion:'Ensure Deletion'
-  };
+  const EXP_LABELS = {forwardMessage:'Forward Message',reinvite:'Reinvite',noDm:'No DM',noWarning:'No Warning',channelWarmer:'Channel Warmer',randomChannelName:'Random Name',randomNameChaos:'Random Chaos',timeoutFirst:'Timeout First',onlyRecentDelete:'Recent Delete',manyTraps:'Many Traps',ensureDeletion:'Ensure Deletion'};
   document.getElementById('expGrid').innerHTML = Object.entries(stats.experiments)
-    .map(([k, v]) => `<span class="exp-chip ${v ? 'on' : ''}">${EXP_LABELS[k] || k}</span>`)
-    .join('');
+    .map(([k, v]) => `<span class="exp-chip ${v ? 'on' : ''}">${EXP_LABELS[k] || k}</span>`).join('');
 
-  // Reset to stats tab
   document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === 0));
   document.querySelectorAll('.tab-content').forEach((t, i) => t.classList.toggle('active', i === 0));
 }
 
 async function saveMessages() {
-  const body = {
+  await apiPost(`/api/guild/${currentGuildId}/messages`, {
     warning: document.getElementById('msgWarning').value.trim(),
     dm: document.getElementById('msgDm').value.trim(),
     log: document.getElementById('msgLog').value.trim(),
-  };
-  await apiPost(`/api/guild/${currentGuildId}/messages`, body);
-  const status = document.getElementById('saveStatus');
-  status.classList.add('show');
-  setTimeout(() => status.classList.remove('show'), 2000);
+  });
+  const s = document.getElementById('saveStatus');
+  s.classList.add('show');
+  setTimeout(() => s.classList.remove('show'), 2500);
 }
 
 function resetMessages() {
@@ -369,19 +385,13 @@ function resetMessages() {
   document.getElementById('msgLog').value = '';
 }
 
-// ── Helpers ──
-function esc(str) {
-  const d = document.createElement('div');
-  d.textContent = str;
-  return d.innerHTML;
-}
-
+function esc(str) { const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
 function timeAgo(ts) {
-  const diff = (Date.now() - ts) / 1000;
-  if (diff < 60) return 'just now';
-  if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
-  if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
-  return Math.floor(diff / 86400) + 'd ago';
+  const d = (Date.now() - ts) / 1000;
+  if (d < 60) return 'just now';
+  if (d < 3600) return Math.floor(d/60) + 'm ago';
+  if (d < 86400) return Math.floor(d/3600) + 'h ago';
+  return Math.floor(d/86400) + 'd ago';
 }
 
 init();
