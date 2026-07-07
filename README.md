@@ -1,57 +1,91 @@
-# بوت طرد القناة الممنوعة
+# Spam Trap Bot
 
-بوت بسيط: أي حد يكتب في القناة اللي محددها، بيتمسح الرسالة بتاعته وبيتطرد من السيرفر.
+بوت Discord بيمسك بوتات السبام والأكونتات المخترقة (hacked) تلقائي، عن طريق قناة "فخ" (trap channel). أي حد مش أدمن ومش بوت يكتب فيها بيتعاقب في أقل من 3 ثواني بدون أي تدخل يدوي.
 
-- السيرفر: `1025348384900522004`
-- القناة الممنوعة: `1520799402883809382`
-- الأدمن مستثنى من الطرد (اختياري - تقدر تشيله من الكود لو عايز)
+**Application ID:** `1523811499766976723`
+**اسم البوت:** Spam Trap
+
+---
 
 ## 1) خطوات ضرورية في Discord Developer Portal
 
-1. روح على https://discord.com/developers/applications واختار البوت بتاعك (أو اعمل واحد جديد).
+1. https://discord.com/developers/applications → اختار الأبلكيشن اللي الـ ID بتاعه `1523811499766976723`.
 2. من تبويب **Bot**:
    - فعّل **MESSAGE CONTENT INTENT**
    - فعّل **SERVER MEMBERS INTENT**
-   - خد الـ Token (Reset Token لو مش متأكد) - هتحطه في متغير البيئة `BOT_TOKEN`
-3. من تبويب **OAuth2 > URL Generator**:
-   - اختار Scopes: `bot`
-   - اختار Permissions: `Kick Members`, `Manage Messages`, `View Channel`, `Send Messages`
-   - افتح اللينك اللي هيتولد وادخل بيه سيرفرك عشان تدعي البوت
+   - فعّل **SERVER MODERATION INTENT** (لو ظاهر)
+   - خد التوكن وحطه في `BOT_TOKEN`
+3. من تبويب **General Information** خد الـ **Application ID** وحطه في `CLIENT_ID` (هو نفسه `1523811499766976723`).
+4. ارفع الإيموجي المخصص للبوت من تبويب **Emojis** باسم `Done` (لازم يبقى نفس الاسم عشان `<:Done:1523817641653829774>` يشتغل، أو غيّر الـ ID في `index.js` لو رفعته برقم تاني).
+5. من **OAuth2 > URL Generator**:
+   - Scopes: `bot`, `applications.commands`
+   - Permissions: `Ban Members`, `Manage Messages`, `Manage Channels`, `Moderate Members`, `Create Instant Invite`, `View Channel`, `Send Messages`, `Manage Roles` (لو محتاج)
+   - افتح اللينك وادعي البوت لسيرفرك
 
-⚠️ **مهم جدًا**: رتبة البوت في السيرفر (Role) لازم تكون **أعلى** من رتبة أي حد عايز تطرده، وإلا مش هيقدر يطرد حد.
+⚠️ رتبة البوت لازم تكون **أعلى** من رتبة أي حد عايز تطرده/تبانه.
 
-## 2) رفع الكود على GitHub
+---
+
+## 2) تسجيل الـ Slash Commands
+
+قبل أول تشغيل، أو بعد أي تعديل في `commands.js`:
+
+```bash
+npm install
+npm run deploy-commands
+```
+
+- لو حطيت `GUILD_ID` في `.env`، الأوامر هتظهر فورًا على السيرفر ده بس (مفيد للتجربة).
+- لو سبته فاضي، الأوامر بتتسجل Global وممكن تاخد لحد ساعة تظهر على كل السيرفرات.
+
+---
+
+## 3) رفع الكود على GitHub
 
 ```bash
 git init
 git add .
-git commit -m "kick channel bot"
+git commit -m "spam trap bot"
 git branch -M main
 git remote add origin <رابط الريبو بتاعك>
 git push -u origin main
 ```
 
-## 3) النشر على Railway
+---
 
-1. ادخل https://railway.app وسجل دخول بحساب GitHub.
-2. اعمل **New Project > Deploy from GitHub repo** واختار الريبو بتاع البوت.
-3. من تبويب **Variables** ضيف المتغيرات دي:
-   - `BOT_TOKEN` = توكن البوت
-   - `GUILD_ID` = `1025348384900522004`
-   - `CHANNEL_ID` = `1520799402883809382`
-4. Railway هيتعرف تلقائي على `Procfile` أو `npm start` ويشغل البوت كـ Worker.
-5. تابع الـ Logs، لو شفت `✅ البوت شغال دلوقتي باسم: ...` يبقى كله تمام.
+## 4) النشر على Railway
 
-## 4) لو عايز تغيّر السيرفر أو القناة لاحقًا
+1. https://railway.app → **New Project > Deploy from GitHub repo** → اختار الريبو.
+2. من **Variables** ضيف:
+   - `BOT_TOKEN`
+   - `CLIENT_ID` = `1523811499766976723`
+   - `GUILD_ID` (اختياري، سيبه فاضي لو عايزه يشتغل على كذا سيرفر)
+3. Railway هيشغل `node index.js` (من `Procfile`/`npm start`).
+4. **مهم للاستمرارية**: البوت بيحفظ الإعدادات في `data/db.json` على القرص. من غير **Volume** في Railway، البيانات دي هتتمسح لو البوت عمل Redeploy. من تبويب **Settings > Volumes** في Railway، اعمل Volume واربطه بمسار `/app/data` عشان الإعدادات متتمسحش.
 
-من غير ما تعدل الكود، غيّر قيم `GUILD_ID` و `CHANNEL_ID` من Variables في Railway وريستارت البوت.
+---
 
-## ملاحظات
+## 5) الأوامر المتاحة (لازم Ban Members + Manage Server)
 
-- لو عايز البوت يطرد الأدمن كمان، امسح الجزء ده من `index.js`:
-```js
-if (member.permissions.has(PermissionsBitField.Flags.Administrator)) {
-  return;
-}
-```
-- لو عايز بدل الطرد يكون **Timeout** (إسكات مؤقت) بدل طرد نهائي، قولي وأعدلها لك بسهولة.
+| الأمر | الوظيفة |
+| --- | --- |
+| `/spamtrap channel` | تحديد قناة الفخ + بوستنج رسالة تحذير بـ 7 لغات ومعمولها Pin |
+| `/spamtrap log` | تحديد قناة اللوج |
+| `/spamtrap action` | softban (افتراضي) / ban / disabled |
+| `/spamtrap channels` | لغاية 5 قنوات فخ (محتاج تفعيل Many Traps الأول) |
+| `/spamtrap toggle` | قايمة منسدلة لتشغيل/تقفيل أي تجربة من الـ 11 |
+| `/spamtrap experiments` | عرض كل التجارب وحالتها |
+| `/spamtrap-messages` | فورم لتعديل رسالة التحذير/الـ DM/اللوج (بتدعم المتغيرات زي `{{server:name}}`) |
+| `/spamtrap status` | عرض الإعدادات الحالية بالكامل |
+| `/spamtrap stats` | إحصائيات الإمساك (السيرفر ده + كل السيرفرات) |
+| `/spamtrap disable` | يوقف الفخ بس يسيب باقي الإعدادات |
+
+## التجارب الـ 11 (Experiments)
+
+Forward Message, Reinvite, No DM, No Warning, Channel Warmer, Random Channel Name, Random Name Chaos, Timeout First, Only Recent Delete, Many Traps, Ensure Deletion — كل التفاصيل موجودة في `/spamtrap experiments` جوه البوت نفسه.
+
+ملاحظة: Random Channel Name و Random Name Chaos بيلغوا بعض — تفعيل واحد بيقفل التاني أوتوماتيك.
+
+## متغيرات الرسايل (Template Variables)
+
+`{{action:text}}`, `{{server:name}}`, `{{server:name:linked}}`, `{{trap:channel:link}}`, `{{trap:channel:mention}}` — تقدر تستخدمهم في `/spamtrap-messages`.

@@ -1,0 +1,58 @@
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+
+const commands = [
+  new SlashCommandBuilder()
+    .setName('spamtrap')
+    .setDescription('Spam Trap moderation bot controls')
+    .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers)
+    .addSubcommand((sub) =>
+      sub
+        .setName('channel')
+        .setDescription('Set the trap channel')
+        .addChannelOption((opt) => opt.setName('channel').setDescription('The trap channel').setRequired(true))
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName('log')
+        .setDescription('Set the mod log channel')
+        .addChannelOption((opt) => opt.setName('channel').setDescription('The log channel').setRequired(true))
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName('action')
+        .setDescription('Choose the moderation action')
+        .addStringOption((opt) =>
+          opt
+            .setName('type')
+            .setDescription('Action type')
+            .setRequired(true)
+            .addChoices(
+              { name: 'softban (ban then unban, default)', value: 'softban' },
+              { name: 'ban (permanent)', value: 'ban' },
+              { name: 'disabled (log only)', value: 'disabled' }
+            )
+        )
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName('channels')
+        .setDescription('Set up to 5 trap channels (requires Many Traps experiment)')
+        .addChannelOption((opt) => opt.setName('channel1').setDescription('Trap channel 1').setRequired(true))
+        .addChannelOption((opt) => opt.setName('channel2').setDescription('Trap channel 2').setRequired(false))
+        .addChannelOption((opt) => opt.setName('channel3').setDescription('Trap channel 3').setRequired(false))
+        .addChannelOption((opt) => opt.setName('channel4').setDescription('Trap channel 4').setRequired(false))
+        .addChannelOption((opt) => opt.setName('channel5').setDescription('Trap channel 5').setRequired(false))
+    )
+    .addSubcommand((sub) => sub.setName('toggle').setDescription('Enable or disable an experiment (dropdown)'))
+    .addSubcommand((sub) => sub.setName('experiments').setDescription('View all experiments and their status'))
+    .addSubcommand((sub) => sub.setName('status').setDescription('View the current configuration'))
+    .addSubcommand((sub) => sub.setName('stats').setDescription('View moderation statistics'))
+    .addSubcommand((sub) => sub.setName('disable').setDescription('Turn off the trap (keeps other settings)')),
+
+  new SlashCommandBuilder()
+    .setName('spamtrap-messages')
+    .setDescription('Customize the warning, DM, and log messages')
+    .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
+].map((c) => c.toJSON());
+
+module.exports = { commands };
