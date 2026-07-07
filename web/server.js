@@ -202,6 +202,15 @@ function startDashboard(client) {
   });
 
   // ── SPA fallback ──
+  // ── Static pages ──
+  app.get('/privacy', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'privacy.html'));
+  });
+  app.get('/terms', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'terms.html'));
+  });
+
+  // ── SPA fallback ──
   app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
   });

@@ -14,106 +14,72 @@ a{color:var(--orange);text-decoration:none}a:hover{text-decoration:underline}
 .nav-brand{display:flex;align-items:center;gap:10px;font:700 17px var(--font)}
 .nav-brand img{height:28px}
 .nav-brand span{background:linear-gradient(135deg,#ff9240,var(--orange),#e83535);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav-links{display:flex;align-items:center;gap:4px}
+.nav-links a{color:var(--text);font:500 14px var(--font);padding:7px 13px;border-radius:8px;transition:all .15s}
+.nav-links a:hover{background:rgba(255,255,255,.05)}
 .container{max-width:800px;margin:0 auto;padding:90px 32px 60px}
 h1{font-size:32px;margin-bottom:8px;font-weight:800}
 .subtitle{color:var(--text2);font-size:14px;margin-bottom:40px}
-h2{font-size:20px;margin:32px 0 12px;color:var(--text);font-weight:700}
-p,li{font-size:15px;color:var(--text2);line-height:1.7;margin-bottom:12px}
-ul{padding-left:24px;margin-bottom:16px}
-li{margin-bottom:6px}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:20px}
+h3{font-size:18px;margin:32px 0 12px;color:var(--text);font-weight:700}
+p{font-size:15px;color:var(--text2);line-height:1.75;margin-bottom:14px}
+code{background:var(--surface);padding:2px 6px;border-radius:4px;font-size:13px;color:var(--orange)}
 .footer{padding:28px 32px;text-align:center;color:var(--text3);font-size:13px;border-top:1px solid var(--border);margin-top:40px}
-.footer a{margin:0 12px}
+.footer a{color:var(--text3);margin:0 12px}
+.footer a:hover{color:var(--orange)}
 </style>
 </head>
 <body>
 <nav class="nav">
   <a href="/" style="text-decoration:none"><div class="nav-brand"><img src="/nav-logo.png" alt="Spam Trap" style="height:28px"><span>SPAM TRAP</span></div></a>
+  <div class="nav-links">
+    <a href="/">Home</a>
+    <a href="/privacy">Privacy</a>
+    <a href="/terms">Terms</a>
+  </div>
 </nav>
 
 <div class="container">
 <h1>Terms of Service</h1>
 <p class="subtitle">Last updated: July 7, 2026</p>
 
-<div class="card">
-<p>By adding Spam Trap ("the Bot") to your Discord server or using the web dashboard, you agree to the following terms. If you do not agree, please remove the bot from your server and discontinue use.</p>
-</div>
+<h3>Service Overview</h3>
+<p>Spam Trap is a free Discord moderation bot designed to detect spam, stop compromised accounts, and help keep Discord communities safe.</p>
 
-<h2>1. Description of Service</h2>
-<p>Spam Trap is a free Discord moderation bot that automatically detects and removes spammers and compromised accounts by monitoring designated trap channels. The bot provides soft-banning, banning, DM notifications, moderation logging, and a web dashboard for server administrators.</p>
+<h3>Eligibility</h3>
+<p>You must be at least 13 years old to use Spam Trap. You must also have permission from the server owner or administrators and grant the bot the required Discord permissions such as <strong>Ban Members</strong> and <strong>Manage Server</strong>.</p>
 
-<h2>2. Eligibility</h2>
-<ul>
-<li>You must be at least 13 years old to use Spam Trap, in compliance with Discord's Terms of Service.</li>
-<li>You must have the necessary permissions (Ban Members + Manage Server) in the Discord server where you configure the bot.</li>
-<li>By adding the bot to a server, you confirm you have authorization from the server owner to do so.</li>
-</ul>
+<h3>Acceptable Use</h3>
+<p>Spam Trap must only be used for legitimate server moderation. You may not use the bot to harass users, target legitimate members, abuse its features, or violate Discord's Terms of Service.</p>
 
-<h2>3. Acceptable Use</h2>
-<p>You agree to use Spam Trap only for its intended purpose: moderating spam and compromised accounts. You agree NOT to:</p>
-<ul>
-<li>Use the bot to harass, target, or discriminate against specific users or groups.</li>
-<li>Deliberately configure the bot to ban legitimate users.</li>
-<li>Attempt to exploit, reverse engineer, or interfere with the bot's operation.</li>
-<li>Use the bot in violation of Discord's Terms of Service or Community Guidelines.</li>
-<li>Misrepresent the bot's functionality or claim ownership of it.</li>
-<li>Use the web dashboard to access servers you do not have permission to manage.</li>
-</ul>
+<h3>How the Bot Works</h3>
+<p>Spam Trap automatically monitors configured trap channels. When spam is detected, it performs the configured moderation action, removes spam messages, notifies the affected user when appropriate, and records the action in your moderation logs.</p>
 
-<h2>4. Bot Behavior</h2>
-<p>By adding Spam Trap to your server, you acknowledge and accept that:</p>
-<ul>
-<li>The bot will automatically ban or soft-ban any non-admin, non-bot user who sends a message in the designated trap channel(s).</li>
-<li>The bot will attempt to DM users before taking action (unless the No DM experiment is enabled).</li>
-<li>The bot will delete messages from caught users.</li>
-<li>The bot may automatically create a trap channel when joining a server (if it has the Manage Channels permission).</li>
-<li>Soft-banned users are immediately unbanned and can rejoin the server.</li>
-</ul>
+<h3>Automatic Trap Channel</h3>
+<p>When Spam Trap joins a server, it automatically creates a <strong>spam trap</strong> channel with a multilingual warning message. Administrators can rename or replace this channel at any time.</p>
 
-<h2>5. Auto-Channel Creation</h2>
-<p>When Spam Trap joins a new server with the Manage Channels permission, it will automatically create a text channel named "spam-trap" at the top of the channel list. Server administrators can rename, move, or delete this channel and configure a different trap channel using the <code>/spamtrap channel</code> command.</p>
+<h3>Limitation of Liability</h3>
+<p>Spam Trap is provided as is without warranties of any kind. While we work to provide accurate detection, we cannot guarantee that every action will be correct or uninterrupted. We are not responsible for false positives, service interruptions, downtime, or data loss.</p>
 
-<h2>6. Limitation of Liability</h2>
-<p>Spam Trap is provided "as is" without warranty of any kind. We are not responsible for:</p>
-<ul>
-<li>Legitimate users being caught by the trap (administrators should inform their community about the trap channel).</li>
-<li>Bot downtime, errors, or failures to catch spam.</li>
-<li>Any data loss or damage resulting from the use of the bot.</li>
-<li>Actions taken by Discord that affect the bot's functionality.</li>
-</ul>
-<p>Our total liability for any claim arising from the use of Spam Trap is limited to zero (the bot is free).</p>
+<h3>Server Administrator Responsibilities</h3>
+<p>Server administrators are responsible for configuring Spam Trap correctly, maintaining proper role hierarchy, reviewing moderation logs, informing their community about automated moderation when appropriate, and ensuring their server complies with applicable laws and Discord's policies.</p>
 
-<h2>7. Server Administrator Responsibilities</h2>
-<p>As a server administrator using Spam Trap, you are responsible for:</p>
-<ul>
-<li>Ensuring the bot's role is positioned correctly in the role hierarchy.</li>
-<li>Informing your community about the trap channel if you choose to make it visible.</li>
-<li>Reviewing moderation logs to ensure the bot is working as intended.</li>
-<li>Configuring the bot appropriately for your server's needs.</li>
-<li>Complying with all applicable laws and Discord's Terms of Service.</li>
-</ul>
+<h3>Web Dashboard</h3>
+<p>The Spam Trap dashboard uses Discord OAuth2 for authentication. It only accesses your Discord username, avatar, and the list of servers you can manage. Login sessions automatically expire after seven days.</p>
 
-<h2>8. Web Dashboard</h2>
-<p>The web dashboard uses Discord OAuth2 for authentication. By logging in, you authorize Spam Trap to access your Discord username, avatar, and server list (limited to servers where you have Manage Server permission). Dashboard sessions expire after 7 days.</p>
+<h3>Service Availability</h3>
+<p>We aim to keep Spam Trap available around the clock, but uninterrupted service cannot be guaranteed. Features may change, be suspended, or be discontinued at any time without prior notice.</p>
 
-<h2>9. Availability</h2>
-<p>We strive to keep Spam Trap online 24/7, but we do not guarantee uninterrupted service. The bot may experience downtime for maintenance, updates, or hosting issues. We reserve the right to modify, suspend, or discontinue the bot at any time without notice.</p>
+<h3>Changes to These Terms</h3>
+<p>These Terms of Service may be updated from time to time. Continued use of Spam Trap after changes are published means you accept the updated terms.</p>
 
-<h2>10. Modifications to Terms</h2>
-<p>We reserve the right to update these Terms of Service at any time. Changes will be reflected by updating the "Last updated" date at the top of this page. Continued use of the bot after changes constitutes acceptance of the updated terms.</p>
+<h3>Termination</h3>
+<p>We reserve the right to suspend or terminate access to Spam Trap if these Terms are violated or if the service is abused.</p>
 
-<h2>11. Termination</h2>
-<p>We reserve the right to restrict or terminate access to Spam Trap for any server or user that violates these terms or uses the bot in a manner we deem harmful or abusive.</p>
+<h3>Intellectual Property</h3>
+<p>The Spam Trap name, logo, badges, branding, website, and related assets are the intellectual property of the Spam Trap project and may not be copied, redistributed, or used without permission.</p>
 
-<h2>12. Intellectual Property</h2>
-<p>The Spam Trap name, logo, badges, and all associated branding are the property of the bot's creator. You may not use these assets without permission, except for the purpose of promoting the bot as intended (sharing invite links, screenshots, etc.).</p>
-
-<h2>13. Contact</h2>
-<p>If you have questions about these Terms of Service, you can:</p>
-<ul>
-<li>Open an issue on our <a href="https://github.com/aimanmoustafa/spamtrap" target="_blank">GitHub repository</a>.</li>
-<li>Contact us through Discord.</li>
-</ul>
+<h3>Contact</h3>
+<p>If you have any questions about these Terms, please contact us through <a href="https://github.com/aimanmoustafa/spamtrap" target="_blank">GitHub Issues</a> or our Discord server.</p>
 
 </div>
 
