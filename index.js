@@ -14,22 +14,10 @@ const client = new Client({
   ],
 });
 
-// الرسايل اللي هتظهر في الستيت بالتبادل
-const STATUSES = ['MEM DEVELOPMENT', 'Spam Trap'];
-let statusIndex = 0;
-
-function rotateStatus() {
-  client.user.setActivity(STATUSES[statusIndex], { type: 4 }); // type 4 = Custom Status
-  statusIndex = (statusIndex + 1) % STATUSES.length;
-}
-
 client.once('ready', () => {
   console.log(`✅ البوت شغال دلوقتي باسم: ${client.user.tag}`);
   console.log(`🎯 السيرفر المستهدف: ${TARGET_GUILD_ID}`);
   console.log(`🎯 القناة الممنوعة: ${TARGET_CHANNEL_ID}`);
-
-  rotateStatus(); // أول ستيت فور ما البوت يشتغل
-  setInterval(rotateStatus, 10 * 1000); // يبدل كل 10 ثواني - غيّر الرقم لو عايز وقت مختلف
 });
 
 client.on('messageCreate', async (message) => {
@@ -56,14 +44,14 @@ client.on('messageCreate', async (message) => {
 
     // 2) اطرد العضو من السيرفر
     if (member.kickable) {
-      await member.kick('Wrote in a restricted channel').catch((err) => {
+      await member.kick('كتب في قناة ممنوع الكتابة فيها').catch((err) => {
         console.error('❌ فشل في طرد العضو:', err.message);
       });
 
       // رسالة تنبيه في القناة (بتتمسح لوحدها بعد شوية)
       try {
         const notice = await message.channel.send(
-          `🚫 <@${member.id}> has been kicked for writing in this channel.`
+          `🚫 تم طرد <@${member.id}> لأنه كتب في القناة دي.`
         );
         setTimeout(() => notice.delete().catch(() => {}), 5000);
       } catch (_) {}
