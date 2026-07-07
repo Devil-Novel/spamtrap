@@ -39,8 +39,19 @@ a{color:var(--orange);text-decoration:none}code{background:var(--bg2);padding:2p
 .hero-text p{font-size:17px;color:var(--text2);line-height:1.65;max-width:460px;margin-bottom:28px}
 .hero-text p strong{color:var(--orange)}
 .hero-buttons{display:flex;gap:10px;flex-wrap:wrap}
-.hero-visual{flex:0 0 400px;display:flex;justify-content:center}
-.hero-visual img{max-width:380px;width:100%;border-radius:16px;box-shadow:0 12px 60px rgba(0,0,0,.5)}
+.hero-visual{flex:0 0 420px;position:relative;height:380px}
+.hero-logo-wrap{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:240px;height:240px;background:url('/bg-square.png') center/cover;border-radius:20px;border:1px solid var(--border2);box-shadow:0 16px 60px rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.hero-logo-wrap img{width:200px;filter:drop-shadow(0 4px 12px rgba(0,0,0,.5))}
+.hero-float{position:absolute;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:10px 16px;font-size:13px;box-shadow:0 8px 30px rgba(0,0,0,.5);white-space:nowrap;animation:float 3s ease-in-out infinite}
+.hero-float-1{top:20px;right:10px;display:flex;align-items:center;gap:8px;animation-delay:0s}
+.hero-float-1 .red-dot{width:8px;height:8px;border-radius:50%;background:var(--red);flex-shrink:0}
+.hero-float-1 .spam-text{color:var(--text3);font-size:12px}
+.hero-float-2{bottom:90px;right:0;display:flex;align-items:center;gap:8px;animation-delay:.5s}
+.hero-float-2 img{width:20px;height:20px}
+.hero-float-2 .check{color:var(--green);font-weight:700;font-size:16px}
+.hero-float-3{bottom:30px;left:10px;display:flex;align-items:center;gap:8px;color:var(--text2);animation-delay:1s}
+.hero-float-3 .hash{color:var(--text3);font-weight:700}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 
 /* STATS */
 .stats-bar{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:44px 32px}
@@ -94,29 +105,60 @@ a{color:var(--orange);text-decoration:none}code{background:var(--bg2);padding:2p
 .dash{display:none;padding-top:66px}
 .dash.active{display:block}
 .landing{display:block}.landing.hidden{display:none}
-.container{max-width:960px;margin:0 auto;padding:24px}
-.d-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
-.d-card h3{font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
-.d-card h3 img{width:18px;height:18px}
-.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
-.d-stat-row{display:flex;gap:12px;margin-bottom:20px}
-.d-stat-box{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;text-align:center;position:relative;overflow:hidden}
+.container{max-width:1040px;margin:0 auto;padding:24px 32px}
+
+/* Welcome bar */
+.dash-welcome{background:linear-gradient(135deg,var(--surface),var(--surface2));border:1px solid var(--border);border-radius:16px;padding:24px 28px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;position:relative;overflow:hidden}
+.dash-welcome::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--orange),var(--red),var(--orange))}
+.dash-welcome-left{display:flex;align-items:center;gap:14px}
+.dash-welcome-left img{width:44px;height:44px;border-radius:50%;border:2px solid var(--orange)}
+.dash-welcome-left h2{font-size:20px;font-weight:700}
+.dash-welcome-left span{font-size:13px;color:var(--text2)}
+.dash-welcome-right{display:flex;gap:8px}
+
+/* Stat boxes */
+.d-stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px}
+.d-stat-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px;position:relative;overflow:hidden;transition:all .25s}
+.d-stat-box:hover{border-color:rgba(244,117,33,.3);box-shadow:0 4px 20px var(--orange-glow)}
 .d-stat-box::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--orange),var(--red))}
-.d-stat-box .num{font-size:28px;font-weight:800;background:linear-gradient(135deg,#ff9240,var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.d-stat-box .label{font-size:13px;color:var(--text2);margin-top:4px}
-.guild-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:12px}
-.guild-card:hover{border-color:var(--orange);transform:translateY(-2px);box-shadow:0 4px 20px var(--orange-glow)}
-.guild-icon{width:46px;height:46px;border-radius:12px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--text2);flex-shrink:0;border:1px solid var(--border)}
-.guild-icon img{width:46px;height:46px;border-radius:12px}
-.guild-info{flex:1}.guild-info h4{font-size:15px;margin-bottom:3px}.guild-info span{font-size:13px;color:var(--text2)}
-.guild-badge{font-size:12px;padding:4px 10px;border-radius:10px;background:rgba(244,117,33,.1);color:var(--orange);font-weight:600;border:1px solid rgba(244,117,33,.15)}
-.back-btn{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--text2);margin-bottom:16px;cursor:pointer;padding:6px 0}.back-btn:hover{color:var(--orange)}
-.guild-header{display:flex;align-items:center;gap:14px;margin-bottom:24px}
-.guild-header .guild-icon{width:56px;height:56px;font-size:22px}.guild-header .guild-icon img{width:56px;height:56px}
-.guild-header h2{font-size:22px}.guild-header span{font-size:14px;color:var(--text2)}
-.tabs{display:flex;gap:2px;background:var(--surface);border-radius:10px;padding:4px;margin-bottom:20px;border:1px solid var(--border)}
-.tab{padding:10px 18px;font:600 14px var(--font);color:var(--text2);cursor:pointer;border-radius:8px;transition:all .15s;text-align:center;flex:1}
-.tab:hover{color:var(--text)}.tab.active{background:linear-gradient(135deg,var(--orange),#d45a10);color:#fff;box-shadow:0 2px 8px rgba(244,117,33,.3)}
+.d-stat-box .stat-icon{width:36px;height:36px;margin-bottom:10px;opacity:.85}
+.d-stat-box .num{font-size:32px;font-weight:800;background:linear-gradient(135deg,#ff9240,var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1}
+.d-stat-box .label{font-size:13px;color:var(--text2);margin-top:6px}
+
+/* Section header */
+.dash-section{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.dash-section img{width:22px;height:22px}
+.dash-section h3{font-size:17px;font-weight:700}
+.dash-section .count{font-size:13px;color:var(--text3);margin-left:4px}
+
+/* Guild cards */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px}
+.guild-card{background:linear-gradient(145deg,var(--surface),var(--surface2));border:1px solid var(--border);border-radius:14px;padding:18px;cursor:pointer;transition:all .25s;display:flex;align-items:center;gap:14px;position:relative;overflow:hidden}
+.guild-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--orange),transparent);opacity:0;transition:opacity .3s}
+.guild-card:hover{border-color:var(--orange);transform:translateY(-3px);box-shadow:0 8px 30px var(--orange-glow)}
+.guild-card:hover::after{opacity:1}
+.guild-icon{width:50px;height:50px;border-radius:14px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:var(--text3);flex-shrink:0;border:1px solid var(--border);overflow:hidden}
+.guild-icon img{width:50px;height:50px;border-radius:14px}
+.guild-info{flex:1;min-width:0}
+.guild-info h4{font-size:15px;margin-bottom:4px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.guild-info .guild-meta{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text3)}
+.guild-info .guild-meta .catches{color:var(--orange);font-weight:600}
+.guild-badge{font-size:11px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;flex-shrink:0}
+.guild-badge.softban{background:rgba(244,117,33,.1);color:var(--orange);border:1px solid rgba(244,117,33,.15)}
+.guild-badge.ban{background:rgba(232,53,53,.1);color:var(--red);border:1px solid rgba(232,53,53,.15)}
+.guild-badge.disabled{background:rgba(77,94,114,.15);color:var(--text3);border:1px solid var(--border)}
+
+/* Detail page */
+.d-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:16px}
+.d-card h3{font-size:15px;margin-bottom:14px;display:flex;align-items:center;gap:8px;font-weight:700}
+.d-card h3 img{width:20px;height:20px}
+.back-btn{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--text2);margin-bottom:16px;cursor:pointer;padding:6px 0;font-weight:500}.back-btn:hover{color:var(--orange)}
+.guild-header{display:flex;align-items:center;gap:16px;margin-bottom:24px}
+.guild-header .guild-icon{width:60px;height:60px;font-size:24px;border-radius:16px}.guild-header .guild-icon img{width:60px;height:60px;border-radius:16px}
+.guild-header h2{font-size:24px;font-weight:800}.guild-header span{font-size:14px;color:var(--text2)}
+.tabs{display:flex;gap:2px;background:var(--surface);border-radius:12px;padding:4px;margin-bottom:22px;border:1px solid var(--border)}
+.tab{padding:11px 20px;font:600 14px var(--font);color:var(--text2);cursor:pointer;border-radius:10px;transition:all .15s;text-align:center;flex:1}
+.tab:hover{color:var(--text)}.tab.active{background:linear-gradient(135deg,var(--orange),#d45a10);color:#fff;box-shadow:0 2px 12px rgba(244,117,33,.3)}
 .tab-content{display:none}.tab-content.active{display:block}
 .action-row{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--border);font-size:14px}.action-row:last-child{border:none}
 .action-row .user-id{color:var(--text2);font-family:monospace;font-size:13px;background:var(--bg);padding:2px 8px;border-radius:4px}
@@ -134,7 +176,7 @@ textarea:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba
 .config-label{font-size:14px;color:var(--text2)}.config-value{font-size:14px;font-weight:600}
 .loading{text-align:center;padding:40px;color:var(--text2)}.spinner{display:inline-block;width:24px;height:24px;border:3px solid var(--border);border-top-color:var(--orange);border-radius:50%;animation:spin .6s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-@media(max-width:768px){.hero{flex-direction:column;padding:110px 20px 50px;gap:30px;min-height:auto}.hero-visual{flex:auto;width:100%}.hero-visual img{max-width:300px}.hero-text h1{font-size:34px}.stats-inner{flex-direction:column;align-items:center}.feat-grid{grid-template-columns:1fr 1fr}.nav-links a.hide-mobile{display:none}.d-stat-row{flex-direction:column}.tabs{flex-direction:column}}
+@media(max-width:768px){.hero{flex-direction:column;padding:110px 20px 50px;gap:30px;min-height:auto}.hero-visual{flex:auto;width:100%;height:320px}.hero-text h1{font-size:34px}.stats-inner{flex-direction:column;align-items:center}.feat-grid{grid-template-columns:1fr 1fr}.nav-links a.hide-mobile{display:none}.d-stat-row{flex-direction:column}.tabs{flex-direction:column}}
 @media(max-width:480px){.feat-grid{grid-template-columns:1fr}}
 </style>
 </head>
@@ -166,7 +208,21 @@ textarea:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba
     </div>
   </div>
   <div class="hero-visual">
-    <img src="/hero-preview.png" alt="Spam Trap in action">
+    <div class="hero-logo-wrap"><img src="/logo.png" alt="Spam Trap"></div>
+    <div class="hero-float hero-float-1">
+      <span class="red-dot"></span>
+      <span><strong>Spammer #1337</strong></span>
+      <span class="spam-text">Buy Nitro free $$</span>
+    </div>
+    <div class="hero-float hero-float-2">
+      <img src="/badge.png" alt="">
+      <span>User banned and messages deleted.</span>
+      <span class="check">&#10003;</span>
+    </div>
+    <div class="hero-float hero-float-3">
+      <span class="hash">#</span>
+      <span><strong>trap</strong> &nbsp;Don't send messages in this channel.</span>
+    </div>
   </div>
 </section>
 
@@ -234,10 +290,11 @@ textarea:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba
 <!-- DASHBOARD -->
 <div class="dash" id="dashPage">
 <div class="container">
+<div id="dashWelcome" class="dash-welcome" style="display:none"></div>
 <div id="dashContent">
 <div id="guildsView">
 <div class="d-stat-row" id="overviewStats"></div>
-<h3 style="margin-bottom:14px;display:flex;align-items:center;gap:8px"><img src="/badge.png" style="width:20px"> Your servers</h3>
+<div class="dash-section"><img src="/badge.png" alt=""><h3>Your servers</h3><span class="count" id="serverCount"></span></div>
 <div class="card-grid" id="guildList"><div class="loading"><div class="spinner"></div><p style="margin-top:10px">Loading...</p></div></div>
 </div>
 <div id="guildView" style="display:none">
@@ -260,12 +317,18 @@ function switchTab(n,el){document.querySelectorAll('.tab').forEach(t=>t.classLis
 function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
 function timeAgo(ts){const d=(Date.now()-ts)/1000;if(d<60)return'just now';if(d<3600)return Math.floor(d/60)+'m ago';if(d<86400)return Math.floor(d/3600)+'h ago';return Math.floor(d/86400)+'d ago'}
 api('/api/overview').then(d=>{document.getElementById('pServers').textContent=d.totalServers||'0';document.getElementById('pCatches').textContent=d.totalCatches||'0'}).catch(()=>{});
-api('/api/me').then(me=>{if(me.loggedIn){const b=document.getElementById('dashBtn');b.textContent=me.user.globalName;b.onclick=e=>{e.preventDefault();showDash()}}});
-function showDash(){document.getElementById('landingPage').classList.add('hidden');document.getElementById('dashPage').classList.add('active');document.querySelectorAll('.hide-mobile').forEach(a=>a.style.display='none');const b=document.getElementById('dashBtn');b.textContent='Logout';b.href='/auth/logout';b.onclick=null;loadOverview();loadGuilds()}
+let dashUser=null;
+api('/api/me').then(me=>{if(me.loggedIn){dashUser=me.user;const b=document.getElementById('dashBtn');b.textContent='Dashboard';b.onclick=e=>{e.preventDefault();showDash()}}});
+function showDash(){document.getElementById('landingPage').classList.add('hidden');document.getElementById('dashPage').classList.add('active');document.querySelectorAll('.hide-mobile').forEach(a=>a.style.display='none');const b=document.getElementById('dashBtn');b.textContent='Logout';b.href='/auth/logout';b.onclick=null;
+if(dashUser){const w=document.getElementById('dashWelcome');w.style.display='flex';w.innerHTML=`<div class="dash-welcome-left"><img src="${dashUser.avatar}" alt=""><div><h2>Welcome back, ${esc(dashUser.globalName)}</h2><span>Manage your Spam Trap servers</span></div></div><div class="dash-welcome-right"><a href="/auth/logout" class="btn btn-ghost btn-sm">Logout</a></div>`}
+loadOverview();loadGuilds()}
 function showGuilds(){document.getElementById('guildsView').style.display='';document.getElementById('guildView').style.display='none';loadGuilds()}
-async function loadOverview(){const d=await api('/api/overview');document.getElementById('overviewStats').innerHTML=`<div class="d-stat-box"><div class="num">${d.totalServers}</div><div class="label">Servers</div></div><div class="d-stat-box"><div class="num">${d.configuredServers}</div><div class="label">Active Traps</div></div><div class="d-stat-box"><div class="num">${d.totalCatches}</div><div class="label">Total Catches</div></div>`}
-async function loadGuilds(){const g=await api('/api/guilds');const el=document.getElementById('guildList');if(!g.length){el.innerHTML='<p style="color:var(--text2)">No servers found.</p>';return}el.innerHTML=g.map(g=>`<div class="guild-card" onclick="openGuild('${g.id}')"><div class="guild-icon">${g.icon?'<img src="'+g.icon+'">':esc(g.name).charAt(0)}</div><div class="guild-info"><h4>${esc(g.name)}</h4><span>${g.catchCount} catches</span></div><span class="guild-badge">${g.action}</span></div>`).join('')}
-async function openGuild(id){currentGuildId=id;document.getElementById('guildsView').style.display='none';document.getElementById('guildView').style.display='';const[s,m]=await Promise.all([api(`/api/guild/${id}/stats`),api(`/api/guild/${id}/messages`)]);document.getElementById('guildHeader').innerHTML=`<div class="guild-icon">${s.icon?'<img src="'+s.icon+'">':esc(s.name).charAt(0)}</div><div><h2>${esc(s.name)}</h2><span>${s.memberCount} members</span></div>`;document.getElementById('guildStats').innerHTML=`<div class="d-stat-box"><div class="num">${s.catchCount}</div><div class="label">Catches</div></div><div class="d-stat-box"><div class="num">${s.globalCatches}</div><div class="label">Global</div></div><div class="d-stat-box"><div class="num">${s.trapChannels.length}</div><div class="label">Traps</div></div>`;const a=document.getElementById('recentActions');a.innerHTML=s.recentActions.length?s.recentActions.map(a=>`<div class="action-row"><span class="user-id">${a.userId}</span><span class="action-type">${esc(a.action)}</span><span class="time">${timeAgo(a.time)}</span></div>`).join(''):'<p style="color:var(--text3);padding:10px 0">No actions yet.</p>';document.getElementById('msgWarning').value=m.warning||'';document.getElementById('msgDm').value=m.dm||'';document.getElementById('msgLog').value=m.log||'';const t=s.trapChannels.length?s.trapChannels.map(c=>'#'+c.name).join(', '):'Not set';const l=s.logChannel?'#'+s.logChannel.name:'Not set';document.getElementById('configInfo').innerHTML=`<div class="config-row"><span class="config-label">Trap channel(s)</span><span class="config-value">${esc(t)}</span></div><div class="config-row"><span class="config-label">Log channel</span><span class="config-value">${esc(l)}</span></div><div class="config-row"><span class="config-label">Action</span><span class="config-value">${s.action}</span></div>`;const EL={forwardMessage:'Forward Message',reinvite:'Reinvite',noDm:'No DM',noWarning:'No Warning',channelWarmer:'Channel Warmer',randomChannelName:'Random Name',randomNameChaos:'Random Chaos',timeoutFirst:'Timeout First',onlyRecentDelete:'Recent Delete',manyTraps:'Many Traps',ensureDeletion:'Ensure Deletion'};document.getElementById('expGrid').innerHTML=Object.entries(s.experiments).map(([k,v])=>`<span class="exp-chip ${v?'on':''}">${EL[k]||k}</span>`).join('');document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===0));document.querySelectorAll('.tab-content').forEach((t,i)=>t.classList.toggle('active',i===0))}
+async function loadOverview(){const d=await api('/api/overview');document.getElementById('overviewStats').innerHTML=
+`<div class="d-stat-box"><img src="/feat-protection.png" class="stat-icon"><div class="num">${d.totalServers}</div><div class="label">Servers Protected</div></div>`+
+`<div class="d-stat-box"><img src="/feat-safety.png" class="stat-icon"><div class="num">${d.configuredServers}</div><div class="label">Active Traps</div></div>`+
+`<div class="d-stat-box"><img src="/badge.png" class="stat-icon"><div class="num">${d.totalCatches}</div><div class="label">Total Catches</div></div>`}
+async function loadGuilds(){const g=await api('/api/guilds');const el=document.getElementById('guildList');document.getElementById('serverCount').textContent=g.length?`(${g.length})`:'';if(!g.length){el.innerHTML='<p style="color:var(--text2)">No servers found. Invite the bot and make sure you have Manage Server permission.</p>';return}el.innerHTML=g.map(g=>`<div class="guild-card" onclick="openGuild('${g.id}')"><div class="guild-icon">${g.icon?'<img src="'+g.icon+'">':esc(g.name).charAt(0)}</div><div class="guild-info"><h4>${esc(g.name)}</h4><div class="guild-meta"><span class="catches">${g.catchCount} catches</span><span>&middot;</span><span>${g.trapChannels} trap${g.trapChannels!==1?'s':''}</span></div></div><span class="guild-badge ${g.action}">${g.action}</span></div>`).join('')}
+async function openGuild(id){currentGuildId=id;document.getElementById('guildsView').style.display='none';document.getElementById('guildView').style.display='';const[s,m]=await Promise.all([api(`/api/guild/${id}/stats`),api(`/api/guild/${id}/messages`)]);document.getElementById('guildHeader').innerHTML=`<div class="guild-icon">${s.icon?'<img src="'+s.icon+'">':esc(s.name).charAt(0)}</div><div><h2>${esc(s.name)}</h2><span>${s.memberCount} members</span></div>`;document.getElementById('guildStats').innerHTML=`<div class="d-stat-box"><img src="/badge.png" class="stat-icon"><div class="num">${s.catchCount}</div><div class="label">Server Catches</div></div><div class="d-stat-box"><img src="/feat-protection.png" class="stat-icon"><div class="num">${s.globalCatches}</div><div class="label">Global Catches</div></div><div class="d-stat-box"><img src="/feat-safety.png" class="stat-icon"><div class="num">${s.trapChannels.length}</div><div class="label">Trap Channels</div></div>`;const a=document.getElementById('recentActions');a.innerHTML=s.recentActions.length?s.recentActions.map(a=>`<div class="action-row"><span class="user-id">${a.userId}</span><span class="action-type">${esc(a.action)}</span><span class="time">${timeAgo(a.time)}</span></div>`).join(''):'<p style="color:var(--text3);padding:10px 0">No actions yet.</p>';document.getElementById('msgWarning').value=m.warning||'';document.getElementById('msgDm').value=m.dm||'';document.getElementById('msgLog').value=m.log||'';const t=s.trapChannels.length?s.trapChannels.map(c=>'#'+c.name).join(', '):'Not set';const l=s.logChannel?'#'+s.logChannel.name:'Not set';document.getElementById('configInfo').innerHTML=`<div class="config-row"><span class="config-label">Trap channel(s)</span><span class="config-value">${esc(t)}</span></div><div class="config-row"><span class="config-label">Log channel</span><span class="config-value">${esc(l)}</span></div><div class="config-row"><span class="config-label">Action</span><span class="config-value">${s.action}</span></div>`;const EL={forwardMessage:'Forward Message',reinvite:'Reinvite',noDm:'No DM',noWarning:'No Warning',channelWarmer:'Channel Warmer',randomChannelName:'Random Name',randomNameChaos:'Random Chaos',timeoutFirst:'Timeout First',onlyRecentDelete:'Recent Delete',manyTraps:'Many Traps',ensureDeletion:'Ensure Deletion'};document.getElementById('expGrid').innerHTML=Object.entries(s.experiments).map(([k,v])=>`<span class="exp-chip ${v?'on':''}">${EL[k]||k}</span>`).join('');document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===0));document.querySelectorAll('.tab-content').forEach((t,i)=>t.classList.toggle('active',i===0))}
 async function saveMessages(){await apiPost(`/api/guild/${currentGuildId}/messages`,{warning:document.getElementById('msgWarning').value.trim(),dm:document.getElementById('msgDm').value.trim(),log:document.getElementById('msgLog').value.trim()});const s=document.getElementById('saveStatus');s.classList.add('show');setTimeout(()=>s.classList.remove('show'),2500)}
 function resetMessages(){document.getElementById('msgWarning').value='';document.getElementById('msgDm').value='';document.getElementById('msgLog').value=''}
 </script>

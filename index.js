@@ -17,7 +17,19 @@ require('dotenv').config();
 const store = require('./lib/store');
 const { replaceVars, DEFAULT_WARNING, DEFAULT_DM, DEFAULT_LOG } = require('./lib/messages');
 
-const DONE_EMOJI = '<:Done:1523817641653829774>';
+const E = {
+  done: '<:Done:1523817641653829774>',
+  experiments: '<:Experiments:1524000040828539011>',
+  safety: '<:ServerSafety:1524000037166645331>',
+  time: '<:SavesTime:1524000035577135114>',
+  easy: '<:EasytoUse:1524000034079768716>',
+  multilingual: '<:MultilingualWarnings:1524000032771149824>',
+  dashboard: '<:WebDashboard:1524000030556426354>',
+  recovery: '<:AccountRecovery:1524000028689961060>',
+  protection: '<:InstantProtection:1524000022830518272>',
+  discord: '<:Discord:1524000021198930031>',
+};
+const DONE_EMOJI = E.done;
 
 const client = new Client({
   intents: [
@@ -65,7 +77,7 @@ function buildStatusEmbed(guildId, guild) {
     : 'Not set';
 
   return new EmbedBuilder()
-    .setTitle('🪤 Spam Trap — Status')
+    .setTitle(`${E.protection} Spam Trap — Status`)
     .setColor(0x2b2d31)
     .addFields(
       { name: 'Trap channel(s)', value: trapChannels },
@@ -84,10 +96,10 @@ function buildStatusEmbed(guildId, guild) {
 
 function buildExperimentsEmbed(guildId) {
   const g = store.getGuild(guildId);
-  const embed = new EmbedBuilder().setTitle('🧪 Spam Trap — Experiments').setColor(0x5865f2);
+  const embed = new EmbedBuilder().setTitle(`${E.experiments} Spam Trap — Experiments`).setColor(0x5865f2);
   for (const key of Object.keys(store.DEFAULT_EXPERIMENTS)) {
     embed.addFields({
-      name: `${g.experiments[key] ? '🟢' : '⚪'} ${store.EXPERIMENT_LABELS[key]}`,
+      name: `${g.experiments[key] ? E.done : '⚪'} ${store.EXPERIMENT_LABELS[key]}`,
       value: store.EXPERIMENT_DESCRIPTIONS[key],
     });
   }
@@ -102,7 +114,7 @@ function buildStatsEmbed(guildId) {
     .join('\n') || 'No recent actions';
 
   return new EmbedBuilder()
-    .setTitle('📊 Spam Trap — Stats')
+    .setTitle(`${E.dashboard} Spam Trap — Stats`)
     .setColor(0x57f287)
     .addFields(
       { name: 'This server', value: `${g.catchCount || 0} caught` },
@@ -124,7 +136,7 @@ async function handleCatch(message, guildConfig) {
     await logToChannel(
       message.guild,
       guildConfig,
-      `⚠️ ${isOwner ? 'Server owner' : 'An admin'} <@${member.id}> wrote in the trap channel and was skipped.`
+      `${E.safety} ${isOwner ? 'Server owner' : 'An admin'} <@${member.id}> wrote in the trap channel and was skipped.`
     );
     return;
   }
@@ -134,7 +146,7 @@ async function handleCatch(message, guildConfig) {
     await logToChannel(
       message.guild,
       guildConfig,
-      `❌ Could not action <@${member.id}> — bot's role is not high enough.`
+      `${E.protection} Could not action <@${member.id}> — bot's role is not high enough.`
     );
     return;
   }
@@ -169,7 +181,7 @@ async function handleCatch(message, guildConfig) {
   }
 
   if (act === 'disabled') {
-    await logToChannel(message.guild, guildConfig, `ℹ️ Message from <@${member.id}> caught but action is disabled (log only).`);
+    await logToChannel(message.guild, guildConfig, `${E.time} Message from <@${member.id}> caught but action is disabled (log only).`);
     return;
   }
 
@@ -187,7 +199,7 @@ async function handleCatch(message, guildConfig) {
       reason: 'Spam Trap: wrote in trap channel',
     });
   } catch (err) {
-    await logToChannel(message.guild, guildConfig, `❌ Failed to ban <@${caughtUserId}>: ${err.message}`);
+    await logToChannel(message.guild, guildConfig, `${E.protection} Failed to ban <@${caughtUserId}>: ${err.message}`);
     return;
   }
 
@@ -204,7 +216,7 @@ async function handleCatch(message, guildConfig) {
   logText = replaceVars(logText, { actionText: actText, serverName, trapChannelLink, trapChannelMention });
 
   const logEmbed = new EmbedBuilder()
-    .setTitle(`${DONE_EMOJI} Spam Trap catch`)
+    .setTitle(`${E.protection} Spam Trap catch`)
     .setColor(0xed4245)
     .setDescription(logText)
     .addFields(
@@ -343,7 +355,7 @@ client.on('interactionCreate', async (interaction) => {
   try {
     if (interaction.isChatInputCommand()) {
       if (!hasPermission(interaction)) {
-        return interaction.reply({ content: '❌ You need Ban Members + Manage Server permissions.', ephemeral: true });
+        return interaction.reply({ content: `${E.protection} You need Ban Members + Manage Server permissions.`, ephemeral: true });
       }
 
       if (interaction.commandName === 'spamtrap-messages') {
@@ -387,27 +399,27 @@ client.on('interactionCreate', async (interaction) => {
           g.trapChannels = [channel.id];
           store.saveGuild(guildId, g);
           await postWarning(channel, g);
-          return interaction.reply(`${DONE_EMOJI} Trap channel set to <#${channel.id}>. Watching now.`);
+          return interaction.reply(`${E.protection} Trap channel set to <#${channel.id}>. Watching now.`);
         }
 
         if (sub === 'log') {
           const channel = interaction.options.getChannel('channel');
           g.logChannel = channel.id;
           store.saveGuild(guildId, g);
-          return interaction.reply(`${DONE_EMOJI} Log channel set to <#${channel.id}>.`);
+          return interaction.reply(`${E.dashboard} Log channel set to <#${channel.id}>.`);
         }
 
         if (sub === 'action') {
           const type = interaction.options.getString('type');
           g.action = type;
           store.saveGuild(guildId, g);
-          return interaction.reply(`${DONE_EMOJI} Action set to **${type}**.`);
+          return interaction.reply(`${E.done} Action set to **${type}**.`);
         }
 
         if (sub === 'channels') {
           if (!g.experiments.manyTraps) {
             return interaction.reply({
-              content: '❌ Enable the **Many Traps** experiment first (`/spamtrap toggle`).',
+              content: `${E.experiments} Enable the **Many Traps** experiment first (\`/spamtrap toggle\`).`,
               ephemeral: true,
             });
           }
@@ -417,7 +429,7 @@ client.on('interactionCreate', async (interaction) => {
           g.trapChannels = channels.map((c) => c.id);
           store.saveGuild(guildId, g);
           for (const c of channels) await postWarning(c, g);
-          return interaction.reply(`${DONE_EMOJI} Trap channels set: ${channels.map((c) => `<#${c.id}>`).join(', ')}`);
+          return interaction.reply(`${E.protection} Trap channels set: ${channels.map((c) => `<#${c.id}>`).join(', ')}`);
         }
 
         if (sub === 'toggle') {
@@ -425,7 +437,7 @@ client.on('interactionCreate', async (interaction) => {
             label: store.EXPERIMENT_LABELS[key],
             description: store.EXPERIMENT_DESCRIPTIONS[key].slice(0, 100),
             value: key,
-            emoji: g.experiments[key] ? '🟢' : '⚪',
+            emoji: g.experiments[key] ? E.done : '⚪',
           }));
           const menu = new StringSelectMenuBuilder()
             .setCustomId('toggle-experiment')
@@ -450,7 +462,7 @@ client.on('interactionCreate', async (interaction) => {
         if (sub === 'disable') {
           g.trapChannels = [];
           store.saveGuild(guildId, g);
-          return interaction.reply(`${DONE_EMOJI} Spam Trap disabled. Other settings were kept — use \`/spamtrap channel\` to re-enable.`);
+          return interaction.reply(`${E.done} Spam Trap disabled. Other settings were kept — use \`/spamtrap channel\` to re-enable.`);
         }
       }
       return;
@@ -470,7 +482,7 @@ client.on('interactionCreate', async (interaction) => {
 
       store.saveGuild(guildId, g);
       return interaction.update({
-        content: `${DONE_EMOJI} **${store.EXPERIMENT_LABELS[key]}** is now **${newValue ? 'ON' : 'OFF'}**.`,
+        content: `${E.experiments} **${store.EXPERIMENT_LABELS[key]}** is now **${newValue ? 'ON' : 'OFF'}**.`,
         components: [],
       });
     }
@@ -487,12 +499,12 @@ client.on('interactionCreate', async (interaction) => {
       g.customMessages.log = log || null;
       store.saveGuild(guildId, g);
 
-      return interaction.reply({ content: `${DONE_EMOJI} Custom messages saved.`, ephemeral: true });
+      return interaction.reply({ content: `${E.done} Custom messages saved.`, ephemeral: true });
     }
   } catch (err) {
     console.error('interactionCreate error:', err);
     if (interaction.isRepliable() && !interaction.replied && !interaction.deferred) {
-      interaction.reply({ content: '❌ Something went wrong.', ephemeral: true }).catch(() => {});
+      interaction.reply({ content: `${E.protection} Something went wrong.`, ephemeral: true }).catch(() => {});
     }
   }
 });
