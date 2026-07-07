@@ -497,4 +497,31 @@ client.on('interactionCreate', async (interaction) => {
   }
 });
 
+// ---------- guildCreate: auto-setup ----------
+
+client.on('guildCreate', async (guild) => {
+  console.log(`Joined server: ${guild.name} (${guild.id})`);
+  try {
+    // Create the trap channel at position 0 (top of server)
+    const channel = await guild.channels.create({
+      name: '⛔│spam-trap',
+      type: 0, // GuildText
+      position: 0,
+      reason: 'Spam Trap: auto-created trap channel',
+    });
+
+    // Save it as the trap channel
+    const g = store.getGuild(guild.id);
+    g.trapChannels = [channel.id];
+    store.saveGuild(guild.id, g);
+
+    // Post and pin the warning
+    await postWarning(channel, g);
+
+    console.log(`Auto-created #${channel.name} in ${guild.name}`);
+  } catch (err) {
+    console.error(`Failed to auto-create channel in ${guild.name}: ${err.message}`);
+  }
+});
+
 client.login(process.env.BOT_TOKEN || process.env.DISCORD_TOKEN);
