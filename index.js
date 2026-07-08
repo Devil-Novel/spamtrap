@@ -502,7 +502,7 @@ client.on('interactionCreate', async (interaction) => {
               { name: `${E.safety} /spamtrap removerole @role`, value: 'Remove a role from managing the bot.', inline: false },
               { name: `${E.safety} /spamtrap roles`, value: 'View all roles that can manage the bot.', inline: false },
             )
-            .setFooter({ text: 'spamtrap-production-b8aa.up.railway.app' });
+            .setFooter({ text: 'spamtrap.help' });
           return interaction.reply({ embeds: [infoEmbed], ephemeral: true });
         }
 

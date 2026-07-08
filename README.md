@@ -4,7 +4,7 @@ The Discord bot that stops spammers before they spread.
 
 Spam Trap is a free, open-source Discord moderation bot that automatically catches and removes spammers and compromised accounts by monitoring dedicated trap channels. Any non-admin user who sends a message in a trap channel is instantly soft-banned, notified via DM with account recovery steps, and logged for your mod team.
 
-**Website:** [spamtrap-production-b8aa.up.railway.app](https://spamtrap-production-b8aa.up.railway.app)
+**Website:** [spamtrap.help](https://spamtrap.help)
 **Invite:** [Add to your server](https://discord.com/oauth2/authorize?client_id=1523811499766976723&permissions=1099511704597&scope=bot%20applications.commands)
 **Support:** [Discord Server](https://discord.gg/WuJMbkNZBJ)
 
@@ -133,7 +133,7 @@ The web dashboard provides a browser-based interface for managing Spam Trap acro
 - Discord OAuth2 login (username, avatar, server list only)
 - Sessions expire after 7 days
 
-**URL:** Your Railway deployment URL (e.g. `https://spamtrap-production-b8aa.up.railway.app`)
+**URL:** Your Railway deployment URL (e.g. `https://spamtrap.help`)
 
 ---
 
@@ -319,12 +319,12 @@ The default warning message is displayed in 8 languages:
 
 ## Links
 
-- **Website:** https://spamtrap-production-b8aa.up.railway.app
+- **Website:** https://spamtrap.help
 - **Invite Bot:** https://discord.com/oauth2/authorize?client_id=1523811499766976723&permissions=1099511704597&scope=bot%20applications.commands
 - **Discord Server:** https://discord.gg/WuJMbkNZBJ
 - **GitHub:** https://github.com/aimanmoustafa/spamtrap
-- **Privacy Policy:** https://spamtrap-production-b8aa.up.railway.app/privacy
-- **Terms of Service:** https://spamtrap-production-b8aa.up.railway.app/terms
+- **Privacy Policy:** https://spamtrap.help/privacy
+- **Terms of Service:** https://spamtrap.help/terms
 - **Contact:** aimanmoustafaa@gmail.com
 - **LinkedIn:** https://www.linkedin.com/in/aimanmoustafa/
 
