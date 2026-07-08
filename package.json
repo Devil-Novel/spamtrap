@@ -1,10 +1,10 @@
 {
   "name": "spam-trap-bot",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "Discord moderation bot with web dashboard. Catches spam bots and compromised accounts via trap channels.",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "node deploy-commands.js && node index.js",
     "deploy-commands": "node deploy-commands.js"
   },
   "engines": {
