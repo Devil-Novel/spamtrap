@@ -10,12 +10,27 @@ function startDashboard(client) {
   const REDIRECT_URI = `${BASE_URL}/auth/callback`;
 
   const app = express();
+
+  // ── Trust Railway's proxy so req.secure / x-forwarded-proto resolve correctly ──
+  app.set('trust proxy', 1);
+
+  // ── Force HTTPS + HSTS (defense in depth; Railway's edge already redirects, this covers direct/edge-cache edge cases) ──
+  app.use((req, res, next) => {
+    if (process.env.NODE_ENV === 'production' && req.headers['x-forwarded-proto'] === 'http') {
+      return res.redirect(301, `https://${req.headers.host}${req.originalUrl}`);
+    }
+    res.setHeader('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
+    next();
+  });
+
   app.use(express.json());
   app.use(
     session({
       name: 'spamtrap',
       keys: [process.env.SESSION_SECRET || 'spamtrap-secret-' + Date.now()],
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
     })
   );
 
@@ -240,7 +255,6 @@ function startDashboard(client) {
     });
   });
 
-  // ── SPA fallback ──
   // ── Static pages ──
   app.get('/privacy', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'privacy.html'));
