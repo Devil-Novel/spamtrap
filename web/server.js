@@ -1,6 +1,7 @@
 const express = require('express');
 const session = require('cookie-session');
 const path = require('path');
+const { PermissionsBitField } = require('discord.js');
 const store = require('../lib/store');
 
 function startDashboard(client) {
@@ -35,7 +36,46 @@ function startDashboard(client) {
   );
 
   // ── Static files ──
-  app.use(express.static(path.join(__dirname, 'public')));
+  // Cache images/assets for a week; keep HTML on no-cache so dashboard
+  // updates (and deploys) always take effect without a stale page.
+  app.use(
+    express.static(path.join(__dirname, 'public'), {
+      maxAge: '7d',
+      setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.html')) {
+          res.setHeader('Cache-Control', 'no-cache');
+        }
+      },
+    })
+  );
+
+  // ── Guards that a logged-in user actually manages the requested guild ──
+  // Prevents any authenticated dashboard user from reading/editing another
+  // server's config just by knowing its guild id.
+  async function requireGuildAccess(req, res, guildId) {
+    if (!req.session.accessToken || !req.session.user) {
+      res.status(401).json({ error: 'Not logged in' });
+      return null;
+    }
+
+    const guild = client.guilds.cache.get(guildId);
+    if (!guild) {
+      res.status(404).json({ error: 'Server not found' });
+      return null;
+    }
+
+    try {
+      const member = guild.members.cache.get(req.session.user.id) || (await guild.members.fetch(req.session.user.id));
+      if (guild.ownerId === member.id || member.permissions.has(PermissionsBitField.Flags.ManageGuild)) {
+        return guild;
+      }
+    } catch (err) {
+      // User isn't a member of this guild, or the fetch failed; fall through to 403.
+    }
+
+    res.status(403).json({ error: 'You do not have permission to manage this server' });
+    return null;
+  }
 
   // ── Auth: redirect to Discord OAuth2 ──
   app.get('/auth/discord', (req, res) => {
@@ -146,12 +186,12 @@ function startDashboard(client) {
 
   // ── API: guild stats ──
   app.get('/api/guild/:id/stats', async (req, res) => {
-    if (!req.session.accessToken) return res.status(401).json({ error: 'Not logged in' });
-
     const guildId = req.params.id;
+    const guild = await requireGuildAccess(req, res, guildId);
+    if (!guild) return;
+
     const config = store.getGuild(guildId);
     const db = store.readDb();
-    const guild = client.guilds.cache.get(guildId);
 
     res.json({
       name: guild?.name || 'Unknown',
@@ -181,8 +221,8 @@ function startDashboard(client) {
   });
 
   // ── API: get custom messages ──
-  app.get('/api/guild/:id/messages', (req, res) => {
-    if (!req.session.accessToken) return res.status(401).json({ error: 'Not logged in' });
+  app.get('/api/guild/:id/messages', async (req, res) => {
+    if (!(await requireGuildAccess(req, res, req.params.id))) return;
     const config = store.getGuild(req.params.id);
     const { DEFAULT_WARNING, DEFAULT_DM, DEFAULT_LOG } = require('../lib/messages');
     res.json({
@@ -196,8 +236,8 @@ function startDashboard(client) {
   });
 
   // ── API: save custom messages ──
-  app.post('/api/guild/:id/messages', (req, res) => {
-    if (!req.session.accessToken) return res.status(401).json({ error: 'Not logged in' });
+  app.post('/api/guild/:id/messages', async (req, res) => {
+    if (!(await requireGuildAccess(req, res, req.params.id))) return;
     const guildId = req.params.id;
     const config = store.getGuild(guildId);
     const { warning, dm, log } = req.body;
@@ -211,10 +251,10 @@ function startDashboard(client) {
   });
 
   // ── API: get roles ──
-  app.get('/api/guild/:id/roles', (req, res) => {
-    if (!req.session.accessToken) return res.status(401).json({ error: 'Not logged in' });
+  app.get('/api/guild/:id/roles', async (req, res) => {
+    const guild = await requireGuildAccess(req, res, req.params.id);
+    if (!guild) return;
     const config = store.getGuild(req.params.id);
-    const guild = client.guilds.cache.get(req.params.id);
 
     // Get all server roles for the dropdown
     const serverRoles = guild
@@ -233,14 +273,18 @@ function startDashboard(client) {
   });
 
   // ── API: update roles ──
-  app.post('/api/guild/:id/roles', (req, res) => {
-    if (!req.session.accessToken) return res.status(401).json({ error: 'Not logged in' });
+  app.post('/api/guild/:id/roles', async (req, res) => {
+    const guild = await requireGuildAccess(req, res, req.params.id);
+    if (!guild) return;
     const config = store.getGuild(req.params.id);
     const { allowedRoles } = req.body;
 
     if (!Array.isArray(allowedRoles)) return res.status(400).json({ error: 'allowedRoles must be an array' });
 
-    config.allowedRoles = allowedRoles;
+    // Only accept role ids that actually exist on this guild.
+    const validRoleIds = allowedRoles.filter((id) => typeof id === 'string' && guild.roles.cache.has(id));
+
+    config.allowedRoles = validRoleIds;
     store.saveGuild(req.params.id, config);
     res.json({ success: true });
   });
