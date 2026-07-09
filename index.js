@@ -275,6 +275,27 @@ async function logToChannel(guild, guildConfig, text, embed) {
 
 // ---------- Warning message (multilingual) ----------
 
+// Deletes the previously auto-created trap channel when the Delete Old Trap
+// experiment is on and the admin is switching to a different channel.
+async function maybeDeleteOldAutoChannel(guild, g, newChannelIds) {
+  if (!g.experiments.deleteOldTrap) return;
+  const oldId = g.autoTrapChannelId;
+  if (!oldId) return;
+  if (newChannelIds.includes(oldId)) return; // still in use, keep it
+
+  try {
+    const oldChannel = guild.channels.cache.get(oldId) || (await guild.channels.fetch(oldId).catch(() => null));
+    if (oldChannel) {
+      await oldChannel.delete('Spam Trap: replaced by a new trap channel (Delete Old Trap experiment)');
+      console.log(`[TRAP] Deleted old auto-created channel ${oldId} in ${guild.name}`);
+    }
+  } catch (err) {
+    console.error(`[TRAP] Failed to delete old auto-created channel in ${guild.name}: ${err.message}`);
+  } finally {
+    g.autoTrapChannelId = null;
+  }
+}
+
 async function postWarning(channel, guildConfig) {
   if (guildConfig.experiments.noWarning) return;
   const text = guildConfig.customMessages.warning || DEFAULT_WARNING;
@@ -412,6 +433,7 @@ client.on('interactionCreate', async (interaction) => {
 
         if (sub === 'channel') {
           const channel = interaction.options.getChannel('channel');
+          await maybeDeleteOldAutoChannel(interaction.guild, g, [channel.id]);
           g.trapChannels = [channel.id];
           store.saveGuild(guildId, g);
           await postWarning(channel, g);
@@ -442,7 +464,9 @@ client.on('interactionCreate', async (interaction) => {
           const channels = [1, 2, 3, 4, 5]
             .map((n) => interaction.options.getChannel(`channel${n}`))
             .filter(Boolean);
-          g.trapChannels = channels.map((c) => c.id);
+          const newIds = channels.map((c) => c.id);
+          await maybeDeleteOldAutoChannel(interaction.guild, g, newIds);
+          g.trapChannels = newIds;
           store.saveGuild(guildId, g);
           for (const c of channels) await postWarning(c, g);
           return interaction.reply(`${E.protection} Trap channels set: ${channels.map((c) => `<#${c.id}>`).join(', ')}`);
@@ -618,6 +642,7 @@ client.on('guildCreate', async (guild) => {
     // Save it as the trap channel
     const g = store.getGuild(guild.id);
     g.trapChannels = [channel.id];
+    g.autoTrapChannelId = channel.id;
     store.saveGuild(guild.id, g);
 
     // Post the warning
