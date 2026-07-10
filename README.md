@@ -29,11 +29,11 @@ Spam Trap is a free, open-source Discord moderation bot that automatically catch
 - **Instant Protection** — Automatically bans spammers the moment they post in the trap channel. Zero delay, zero manual work.
 - **Server Safety** — Stops spam before it spreads. Compromised accounts are caught and notified before they can do damage.
 - **Saves Time** — Reduces moderator workload by handling spam automatically so your team can focus on the community.
-- **Easy to Use** — Two commands to set up. 11 optional experiments to customize. A web dashboard to manage everything.
+- **Easy to Use** — Two commands to set up. 12 optional experiments to customize. A web dashboard to manage everything.
 - **Multilingual Warnings** — Warning message in 8 languages: English, German, Indonesian, Malay, Portuguese, Russian, Spanish, and Arabic.
 - **Account Recovery** — Soft-banned users receive a DM with account recovery steps and can rejoin when their account is secure.
 - **Web Dashboard** — View stats, customize messages, manage roles, and configure settings from a branded web dashboard with Discord OAuth login.
-- **11 Experiments** — Channel warmer, random renaming, reinvite links, timeout-first, and more. Toggle them on or off anytime.
+- **12 Experiments** — Channel warmer, random renaming, reinvite links, timeout-first, and more. Toggle them on or off anytime.
 - **Role-Based Permissions** — Control which roles can manage the bot. Falls back to Ban Members + Manage Server if no roles are set. Server owner always has access.
 - **Auto-Channel Creation** — Bot automatically creates the trap channel when joining a new server (requires Manage Channels permission).
 
@@ -91,6 +91,7 @@ Toggle experiments on or off with `/spamtrap toggle`. Each experiment changes a 
 | **Only Recent Delete** | Only delete messages from the last 24 hours instead of purging all messages during softban. |
 | **Many Traps** | Allow up to 5 trap channels instead of 1. Required for `/spamtrap channels`. |
 | **Ensure Deletion** | After banning, verify the spam message is deleted and force-delete if still present. |
+| **Delete Old Trap** | When switching to a new trap channel, delete the previous auto-created one if it's no longer in use. |
 
 ---
 

@@ -9,6 +9,7 @@ const {
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
+  MessageFlags,
   REST,
   Routes,
 } = require('discord.js');
@@ -296,10 +297,19 @@ async function maybeDeleteOldAutoChannel(guild, g, newChannelIds) {
   }
 }
 
+// Never throws: a channel with no access to send to would otherwise crash
+// whatever command triggered this (e.g. leave a slash command interaction
+// hanging with no response). Callers should check `.ok`.
 async function postWarning(channel, guildConfig) {
-  if (guildConfig.experiments.noWarning) return;
+  if (guildConfig.experiments.noWarning) return { ok: true, skipped: true };
   const text = guildConfig.customMessages.warning || DEFAULT_WARNING;
-  await channel.send(text);
+  try {
+    await channel.send(text);
+    return { ok: true };
+  } catch (err) {
+    console.error(`[WARNING] Failed to post warning in #${channel.name} (${channel.id}): ${err.message}`);
+    return { ok: false, error: err };
+  }
 }
 
 // ---------- Daily tasks: channel warmer + renaming ----------
@@ -348,7 +358,7 @@ async function dailyTick() {
 
 const { startDashboard } = require('./web/server');
 
-client.once('ready', async () => {
+client.once('clientReady', async () => {
   console.log(`Spam Trap is running as ${client.user.tag}`);
 
   // Start the web dashboard
@@ -392,7 +402,7 @@ client.on('interactionCreate', async (interaction) => {
   try {
     if (interaction.isChatInputCommand()) {
       if (!hasPermission(interaction)) {
-        return interaction.reply({ content: `${E.protection} You need Ban Members + Manage Server permissions.`, ephemeral: true });
+        return interaction.reply({ content: `${E.protection} You need Ban Members + Manage Server permissions.`, flags: MessageFlags.Ephemeral });
       }
 
       if (interaction.commandName === 'spamtrap-messages') {
@@ -436,7 +446,13 @@ client.on('interactionCreate', async (interaction) => {
           await maybeDeleteOldAutoChannel(interaction.guild, g, [channel.id]);
           g.trapChannels = [channel.id];
           store.saveGuild(guildId, g);
-          await postWarning(channel, g);
+          const result = await postWarning(channel, g);
+          if (!result.ok) {
+            return interaction.reply({
+              content: `${E.protection} Trap channel set to <#${channel.id}>, but I couldn't post the warning message there (${result.error.message}). Make sure I have **View Channel** and **Send Messages** permissions in that channel.`,
+              flags: MessageFlags.Ephemeral,
+            });
+          }
           return interaction.reply(`${E.protection} Trap channel set to <#${channel.id}>. Watching now.`);
         }
 
@@ -458,18 +474,29 @@ client.on('interactionCreate', async (interaction) => {
           if (!g.experiments.manyTraps) {
             return interaction.reply({
               content: `${E.experiments} Enable the **Many Traps** experiment first (\`/spamtrap toggle\`).`,
-              ephemeral: true,
+              flags: MessageFlags.Ephemeral,
             });
           }
-          const channels = [1, 2, 3, 4, 5]
+          const rawChannels = [1, 2, 3, 4, 5]
             .map((n) => interaction.options.getChannel(`channel${n}`))
             .filter(Boolean);
+          const seen = new Set();
+          const channels = rawChannels.filter((c) => (seen.has(c.id) ? false : (seen.add(c.id), true)));
           const newIds = channels.map((c) => c.id);
           await maybeDeleteOldAutoChannel(interaction.guild, g, newIds);
           g.trapChannels = newIds;
           store.saveGuild(guildId, g);
-          for (const c of channels) await postWarning(c, g);
-          return interaction.reply(`${E.protection} Trap channels set: ${channels.map((c) => `<#${c.id}>`).join(', ')}`);
+          const failed = [];
+          for (const c of channels) {
+            const result = await postWarning(c, g);
+            if (!result.ok) failed.push(c);
+          }
+          const dupeNote = rawChannels.length !== channels.length ? ` (duplicates removed)` : '';
+          let reply = `${E.protection} Trap channels set: ${channels.map((c) => `<#${c.id}>`).join(', ')}${dupeNote}`;
+          if (failed.length) {
+            reply += `\n${E.protection} Couldn't post the warning in ${failed.map((c) => `<#${c.id}>`).join(', ')}. Check my **View Channel** / **Send Messages** permissions there.`;
+          }
+          return interaction.reply({ content: reply, flags: failed.length ? MessageFlags.Ephemeral : undefined });
         }
 
         if (sub === 'toggle') {
@@ -484,7 +511,7 @@ client.on('interactionCreate', async (interaction) => {
             .setPlaceholder('Choose an experiment to toggle')
             .addOptions(options);
           const row = new ActionRowBuilder().addComponents(menu);
-          return interaction.reply({ content: 'Select an experiment to enable/disable:', components: [row], ephemeral: true });
+          return interaction.reply({ content: 'Select an experiment to enable/disable:', components: [row], flags: MessageFlags.Ephemeral });
         }
 
         if (sub === 'experiments') {
@@ -527,7 +554,7 @@ client.on('interactionCreate', async (interaction) => {
               { name: `${E.safety} /spamtrap roles`, value: 'View all roles that can manage the bot.', inline: false },
             )
             .setFooter({ text: 'spamtrap.help' });
-          return interaction.reply({ embeds: [infoEmbed], ephemeral: true });
+          return interaction.reply({ embeds: [infoEmbed], flags: MessageFlags.Ephemeral });
         }
 
         // ── Role management (admin only) ──
@@ -535,28 +562,28 @@ client.on('interactionCreate', async (interaction) => {
           // Only server owner or existing admins can manage roles
           if (interaction.guild.ownerId !== interaction.user.id &&
               !interaction.memberPermissions?.has(PermissionsBitField.Flags.Administrator)) {
-            return interaction.reply({ content: `${E.protection} Only the server owner or administrators can manage bot roles.`, ephemeral: true });
+            return interaction.reply({ content: `${E.protection} Only the server owner or administrators can manage bot roles.`, flags: MessageFlags.Ephemeral });
           }
           const role = interaction.options.getRole('role');
           if (!g.allowedRoles) g.allowedRoles = [];
           if (g.allowedRoles.includes(role.id)) {
-            return interaction.reply({ content: `${E.done} <@&${role.id}> is already an allowed role.`, ephemeral: true });
+            return interaction.reply({ content: `${E.done} <@&${role.id}> is already an allowed role.`, flags: MessageFlags.Ephemeral });
           }
           g.allowedRoles.push(role.id);
           store.saveGuild(guildId, g);
-          return interaction.reply({ content: `${E.done} <@&${role.id}> can now manage Spam Trap.`, ephemeral: true });
+          return interaction.reply({ content: `${E.done} <@&${role.id}> can now manage Spam Trap.`, flags: MessageFlags.Ephemeral });
         }
 
         if (sub === 'removerole') {
           if (interaction.guild.ownerId !== interaction.user.id &&
               !interaction.memberPermissions?.has(PermissionsBitField.Flags.Administrator)) {
-            return interaction.reply({ content: `${E.protection} Only the server owner or administrators can manage bot roles.`, ephemeral: true });
+            return interaction.reply({ content: `${E.protection} Only the server owner or administrators can manage bot roles.`, flags: MessageFlags.Ephemeral });
           }
           const role = interaction.options.getRole('role');
           if (!g.allowedRoles) g.allowedRoles = [];
           g.allowedRoles = g.allowedRoles.filter((id) => id !== role.id);
           store.saveGuild(guildId, g);
-          return interaction.reply({ content: `${E.done} <@&${role.id}> removed from Spam Trap roles.`, ephemeral: true });
+          return interaction.reply({ content: `${E.done} <@&${role.id}> removed from Spam Trap roles.`, flags: MessageFlags.Ephemeral });
         }
 
         if (sub === 'roles') {
@@ -569,7 +596,7 @@ client.on('interactionCreate', async (interaction) => {
               { name: 'Allowed Roles', value: roles },
               { name: 'How it works', value: 'If no roles are set, anyone with **Ban Members + Manage Server** can use the bot.\nOnce you add roles, **only those roles** can use commands.\nThe server owner always has access.' }
             );
-          return interaction.reply({ embeds: [rolesEmbed], ephemeral: true });
+          return interaction.reply({ embeds: [rolesEmbed], flags: MessageFlags.Ephemeral });
         }
       }
       return;
@@ -606,12 +633,12 @@ client.on('interactionCreate', async (interaction) => {
       g.customMessages.log = log || null;
       store.saveGuild(guildId, g);
 
-      return interaction.reply({ content: `${E.done} Custom messages saved.`, ephemeral: true });
+      return interaction.reply({ content: `${E.done} Custom messages saved.`, flags: MessageFlags.Ephemeral });
     }
   } catch (err) {
     console.error('interactionCreate error:', err);
     if (interaction.isRepliable() && !interaction.replied && !interaction.deferred) {
-      interaction.reply({ content: `${E.protection} Something went wrong.`, ephemeral: true }).catch(() => {});
+      interaction.reply({ content: `${E.protection} Something went wrong.`, flags: MessageFlags.Ephemeral }).catch(() => {});
     }
   }
 });
@@ -646,7 +673,10 @@ client.on('guildCreate', async (guild) => {
     store.saveGuild(guild.id, g);
 
     // Post the warning
-    await postWarning(channel, g);
+    const result = await postWarning(channel, g);
+    if (!result.ok) {
+      console.error(`[JOIN] Channel created in ${guild.name} but failed to post warning: ${result.error.message}`);
+    }
 
     console.log(`[JOIN] Setup complete for ${guild.name}`);
   } catch (err) {
