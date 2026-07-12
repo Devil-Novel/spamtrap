@@ -175,8 +175,45 @@ async function handleCatch(message, guildConfig) {
   const act = guildConfig.action; // softban | ban | disabled
   const actText = actionText(act);
 
-  // 3) Send the DM (unless No DM is enabled or action is disabled)
-  if (!guildConfig.experiments.noDm && act !== 'disabled') {
+  const caughtUserId = member.id;
+
+  // 3) Delete the message immediately. Nothing below is allowed to delay this.
+  if (message.deletable) {
+    await message.delete().catch(() => {});
+  }
+
+  if (act === 'disabled') {
+    await logToChannel(message.guild, guildConfig, `${E.time} Message from <@${member.id}> caught but action is disabled (log only).`);
+    return;
+  }
+
+  // 4) Timeout First (optional)
+  if (guildConfig.experiments.timeoutFirst) {
+    await member.timeout(60 * 60 * 1000, 'Spam Trap: pre-ban timeout').catch(() => {});
+  }
+
+  // 5) Ban immediately (also purges their messages). This is the priority
+  // action, it used to run after the DM send below, which meant a slow or
+  // rate-limited Discord DM delivery delayed the actual ban.
+  const purgeSeconds = guildConfig.experiments.onlyRecentDelete ? 15 * 60 : 60 * 60;
+  try {
+    await message.guild.members.ban(caughtUserId, {
+      deleteMessageSeconds: purgeSeconds,
+      reason: 'Spam Trap: wrote in trap channel',
+    });
+  } catch (err) {
+    await logToChannel(message.guild, guildConfig, `${E.protection} Failed to ban <@${caughtUserId}>: ${err.message}`);
+    return;
+  }
+
+  // 6) If action is softban, unban immediately
+  if (act === 'softban') {
+    await message.guild.members.unban(caughtUserId, 'Spam Trap: softban - allow rejoin').catch(() => {});
+  }
+
+  // 7) Send the DM now that the user is already actioned. A slow DM delivery
+  // or reinvite-link creation can no longer delay the ban above.
+  if (!guildConfig.experiments.noDm) {
     let dmText = guildConfig.customMessages.dm || DEFAULT_DM;
     let reinviteLink = '';
     if (guildConfig.experiments.reinvite) {
@@ -191,39 +228,6 @@ async function handleCatch(message, guildConfig) {
     } catch (_) {
       // user has DMs closed - ignore
     }
-  }
-
-  // 4) Delete the message
-  if (message.deletable) {
-    await message.delete().catch(() => {});
-  }
-
-  if (act === 'disabled') {
-    await logToChannel(message.guild, guildConfig, `${E.time} Message from <@${member.id}> caught but action is disabled (log only).`);
-    return;
-  }
-
-  // 5) Timeout First (optional)
-  if (guildConfig.experiments.timeoutFirst) {
-    await member.timeout(60 * 60 * 1000, 'Spam Trap: pre-ban timeout').catch(() => {});
-  }
-
-  // 6) Ban (also purges their messages)
-  const purgeSeconds = guildConfig.experiments.onlyRecentDelete ? 15 * 60 : 60 * 60;
-  const caughtUserId = member.id;
-  try {
-    await message.guild.members.ban(caughtUserId, {
-      deleteMessageSeconds: purgeSeconds,
-      reason: 'Spam Trap: wrote in trap channel',
-    });
-  } catch (err) {
-    await logToChannel(message.guild, guildConfig, `${E.protection} Failed to ban <@${caughtUserId}>: ${err.message}`);
-    return;
-  }
-
-  // 7) If action is softban, unban immediately
-  if (act === 'softban') {
-    await message.guild.members.unban(caughtUserId, 'Spam Trap: softban - allow rejoin').catch(() => {});
   }
 
   // 8) Log
@@ -401,6 +405,13 @@ client.on('messageCreate', async (message) => {
 client.on('interactionCreate', async (interaction) => {
   try {
     if (interaction.isChatInputCommand()) {
+      if (!interaction.guild) {
+        return interaction.reply({
+          content: `${E.protection} This command only works in a server. If you just invited the bot, please try again in a few seconds.`,
+          flags: MessageFlags.Ephemeral,
+        });
+      }
+
       if (!hasPermission(interaction)) {
         return interaction.reply({ content: `${E.protection} You need Ban Members + Manage Server permissions.`, flags: MessageFlags.Ephemeral });
       }
@@ -658,7 +669,7 @@ client.on('guildCreate', async (guild) => {
   try {
     // Create the trap channel at position 0 (top of server)
     const channel = await guild.channels.create({
-      name: '\u{1FAA4}\u2502spam-trap',
+      name: '\u{1FAA4}│spam-trap',
       type: 0, // GuildText
       position: 0,
       reason: 'Spam Trap: auto-created trap channel',
