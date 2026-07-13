@@ -43,6 +43,21 @@ const client = new Client({
   partials: [Partials.Channel],
 });
 
+// Defense in depth: without these, an error/rejection that slips past every
+// local try/catch (a new one we haven't thought of, a library edge case,
+// etc.) crashes the entire Node process - taking the whole bot offline until
+// Railway notices and restarts it. Logging instead of crashing keeps the
+// bot online through the one bad event instead of losing everything.
+client.on('error', (err) => {
+  console.error('[CLIENT ERROR]', err);
+});
+process.on('unhandledRejection', (err) => {
+  console.error('[UNHANDLED REJECTION]', err);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[UNCAUGHT EXCEPTION]', err);
+});
+
 const RANDOM_WORDS = ['general', 'chat', 'lounge', 'memes', 'gaming', 'talk', 'hangout', 'random'];
 function randomWord() {
   return RANDOM_WORDS[Math.floor(Math.random() * RANDOM_WORDS.length)];
@@ -452,14 +467,14 @@ client.on('interactionCreate', async (interaction) => {
   try {
     if (interaction.isChatInputCommand()) {
       if (!interaction.guild) {
-        return interaction.reply({
+        return await interaction.reply({
           content: `${E.protection} This command only works in a server. If you just invited the bot, please try again in a few seconds.`,
           flags: MessageFlags.Ephemeral,
         });
       }
 
       if (!hasPermission(interaction)) {
-        return interaction.reply({ content: `${E.protection} You need Ban Members + Manage Server permissions.`, flags: MessageFlags.Ephemeral });
+        return await interaction.reply({ content: `${E.protection} You need Ban Members + Manage Server permissions.`, flags: MessageFlags.Ephemeral });
       }
 
       if (interaction.commandName === 'spamtrap-messages') {
@@ -490,7 +505,7 @@ client.on('interactionCreate', async (interaction) => {
           new ActionRowBuilder().addComponents(dmInput),
           new ActionRowBuilder().addComponents(logInput)
         );
-        return interaction.showModal(modal);
+        return await interaction.showModal(modal);
       }
 
       if (interaction.commandName === 'spamtrap') {
@@ -499,42 +514,51 @@ client.on('interactionCreate', async (interaction) => {
         const g = store.getGuild(guildId);
 
         if (sub === 'channel') {
+          // This does several sequential Discord API calls before it can
+          // respond (possibly deleting the old auto channel, posting the
+          // warning, posting/pinning the kick counter). That easily blows
+          // past Discord's 3-second initial-response window, which makes
+          // the eventual interaction.reply() fail with "Unknown interaction"
+          // - deferring immediately buys 15 minutes instead of 3 seconds.
+          await interaction.deferReply();
           const channel = interaction.options.getChannel('channel');
           await maybeDeleteOldAutoChannel(interaction.guild, g, [channel.id]);
           g.trapChannels = [channel.id];
           store.saveGuild(guildId, g);
           const result = await postWarning(channel, g);
           if (!result.ok) {
-            return interaction.reply({
+            return await interaction.editReply({
               content: `${E.protection} Trap channel set to <#${channel.id}>, but I couldn't post the warning message there (${result.error.message}). Make sure I have **View Channel** and **Send Messages** permissions in that channel.`,
-              flags: MessageFlags.Ephemeral,
             });
           }
           await postOrUpdateKickCounter(channel, guildId, g.catchCount || 0);
-          return interaction.reply(`${E.protection} Trap channel set to <#${channel.id}>. Watching now.`);
+          return await interaction.editReply(`${E.protection} Trap channel set to <#${channel.id}>. Watching now.`);
         }
 
         if (sub === 'log') {
           const channel = interaction.options.getChannel('channel');
           g.logChannel = channel.id;
           store.saveGuild(guildId, g);
-          return interaction.reply(`${E.done} Log channel set to <#${channel.id}>.`);
+          return await interaction.reply(`${E.done} Log channel set to <#${channel.id}>.`);
         }
 
         if (sub === 'action') {
           const type = interaction.options.getString('type');
           g.action = type;
           store.saveGuild(guildId, g);
-          return interaction.reply(`${E.done} Action set to **${type}**.`);
+          return await interaction.reply(`${E.done} Action set to **${type}**.`);
         }
 
         if (sub === 'channels') {
           if (!g.experiments.manyTraps) {
-            return interaction.reply({
+            return await interaction.reply({
               content: `${E.experiments} Enable the **Many Traps** experiment first (\`/spamtrap toggle\`).`,
               flags: MessageFlags.Ephemeral,
             });
           }
+          // Up to 5 channels, each needing a warning post + counter post/pin -
+          // definitely too slow for the 3-second window, so defer up front.
+          await interaction.deferReply();
           const rawChannels = [1, 2, 3, 4, 5]
             .map((n) => interaction.options.getChannel(`channel${n}`))
             .filter(Boolean);
@@ -558,7 +582,7 @@ client.on('interactionCreate', async (interaction) => {
           if (failed.length) {
             reply += `\n${E.protection} Couldn't post the warning in ${failed.map((c) => `<#${c.id}>`).join(', ')}. Check my **View Channel** / **Send Messages** permissions there.`;
           }
-          return interaction.reply({ content: reply, flags: failed.length ? MessageFlags.Ephemeral : undefined });
+          return await interaction.editReply({ content: reply });
         }
 
         if (sub === 'toggle') {
@@ -573,25 +597,25 @@ client.on('interactionCreate', async (interaction) => {
             .setPlaceholder('Choose an experiment to toggle')
             .addOptions(options);
           const row = new ActionRowBuilder().addComponents(menu);
-          return interaction.reply({ content: 'Select an experiment to enable/disable:', components: [row], flags: MessageFlags.Ephemeral });
+          return await interaction.reply({ content: 'Select an experiment to enable/disable:', components: [row], flags: MessageFlags.Ephemeral });
         }
 
         if (sub === 'experiments') {
-          return interaction.reply({ embeds: [buildExperimentsEmbed(guildId)] });
+          return await interaction.reply({ embeds: [buildExperimentsEmbed(guildId)] });
         }
 
         if (sub === 'status') {
-          return interaction.reply({ embeds: [buildStatusEmbed(guildId)] });
+          return await interaction.reply({ embeds: [buildStatusEmbed(guildId)] });
         }
 
         if (sub === 'stats') {
-          return interaction.reply({ embeds: [buildStatsEmbed(guildId)] });
+          return await interaction.reply({ embeds: [buildStatsEmbed(guildId)] });
         }
 
         if (sub === 'disable') {
           g.trapChannels = [];
           store.saveGuild(guildId, g);
-          return interaction.reply(`${E.done} Spam Trap disabled. Other settings were kept — use \`/spamtrap channel\` to re-enable.`);
+          return await interaction.reply(`${E.done} Spam Trap disabled. Other settings were kept — use \`/spamtrap channel\` to re-enable.`);
         }
 
         if (sub === 'info') {
@@ -616,7 +640,7 @@ client.on('interactionCreate', async (interaction) => {
               { name: `${E.safety} /spamtrap roles`, value: 'View all roles that can manage the bot.', inline: false },
             )
             .setFooter({ text: 'spamtrap.help' });
-          return interaction.reply({ embeds: [infoEmbed], flags: MessageFlags.Ephemeral });
+          return await interaction.reply({ embeds: [infoEmbed], flags: MessageFlags.Ephemeral });
         }
 
         // ── Role management (admin only) ──
@@ -624,28 +648,28 @@ client.on('interactionCreate', async (interaction) => {
           // Only server owner or existing admins can manage roles
           if (interaction.guild.ownerId !== interaction.user.id &&
               !interaction.memberPermissions?.has(PermissionsBitField.Flags.Administrator)) {
-            return interaction.reply({ content: `${E.protection} Only the server owner or administrators can manage bot roles.`, flags: MessageFlags.Ephemeral });
+            return await interaction.reply({ content: `${E.protection} Only the server owner or administrators can manage bot roles.`, flags: MessageFlags.Ephemeral });
           }
           const role = interaction.options.getRole('role');
           if (!g.allowedRoles) g.allowedRoles = [];
           if (g.allowedRoles.includes(role.id)) {
-            return interaction.reply({ content: `${E.done} <@&${role.id}> is already an allowed role.`, flags: MessageFlags.Ephemeral });
+            return await interaction.reply({ content: `${E.done} <@&${role.id}> is already an allowed role.`, flags: MessageFlags.Ephemeral });
           }
           g.allowedRoles.push(role.id);
           store.saveGuild(guildId, g);
-          return interaction.reply({ content: `${E.done} <@&${role.id}> can now manage Spam Trap.`, flags: MessageFlags.Ephemeral });
+          return await interaction.reply({ content: `${E.done} <@&${role.id}> can now manage Spam Trap.`, flags: MessageFlags.Ephemeral });
         }
 
         if (sub === 'removerole') {
           if (interaction.guild.ownerId !== interaction.user.id &&
               !interaction.memberPermissions?.has(PermissionsBitField.Flags.Administrator)) {
-            return interaction.reply({ content: `${E.protection} Only the server owner or administrators can manage bot roles.`, flags: MessageFlags.Ephemeral });
+            return await interaction.reply({ content: `${E.protection} Only the server owner or administrators can manage bot roles.`, flags: MessageFlags.Ephemeral });
           }
           const role = interaction.options.getRole('role');
           if (!g.allowedRoles) g.allowedRoles = [];
           g.allowedRoles = g.allowedRoles.filter((id) => id !== role.id);
           store.saveGuild(guildId, g);
-          return interaction.reply({ content: `${E.done} <@&${role.id}> removed from Spam Trap roles.`, flags: MessageFlags.Ephemeral });
+          return await interaction.reply({ content: `${E.done} <@&${role.id}> removed from Spam Trap roles.`, flags: MessageFlags.Ephemeral });
         }
 
         if (sub === 'roles') {
@@ -658,7 +682,7 @@ client.on('interactionCreate', async (interaction) => {
               { name: 'Allowed Roles', value: roles },
               { name: 'How it works', value: 'If no roles are set, anyone with **Ban Members + Manage Server** can use the bot.\nOnce you add roles, **only those roles** can use commands.\nThe server owner always has access.' }
             );
-          return interaction.reply({ embeds: [rolesEmbed], flags: MessageFlags.Ephemeral });
+          return await interaction.reply({ embeds: [rolesEmbed], flags: MessageFlags.Ephemeral });
         }
       }
       return;
@@ -677,7 +701,7 @@ client.on('interactionCreate', async (interaction) => {
       if (key === 'randomNameChaos' && newValue) g.experiments.randomChannelName = false;
 
       store.saveGuild(guildId, g);
-      return interaction.update({
+      return await interaction.update({
         content: `${E.experiments} **${store.EXPERIMENT_LABELS[key]}** is now **${newValue ? 'ON' : 'OFF'}**.`,
         components: [],
       });
@@ -695,12 +719,20 @@ client.on('interactionCreate', async (interaction) => {
       g.customMessages.log = log || null;
       store.saveGuild(guildId, g);
 
-      return interaction.reply({ content: `${E.done} Custom messages saved.`, flags: MessageFlags.Ephemeral });
+      return await interaction.reply({ content: `${E.done} Custom messages saved.`, flags: MessageFlags.Ephemeral });
     }
   } catch (err) {
     console.error('interactionCreate error:', err);
-    if (interaction.isRepliable() && !interaction.replied && !interaction.deferred) {
-      interaction.reply({ content: `${E.protection} Something went wrong.`, flags: MessageFlags.Ephemeral }).catch(() => {});
+    if (interaction.isRepliable() && !interaction.replied) {
+      const errorText = `${E.protection} Something went wrong.`;
+      if (interaction.deferred) {
+        // deferReply() already happened - can't call reply() again, but the
+        // interaction is still waiting on editReply(), so use that instead
+        // of leaving it hanging for the full 15-minute deferred window.
+        interaction.editReply({ content: errorText }).catch(() => {});
+      } else {
+        interaction.reply({ content: errorText, flags: MessageFlags.Ephemeral }).catch(() => {});
+      }
     }
   }
 });

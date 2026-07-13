@@ -29,11 +29,12 @@ Spam Trap is a free, open-source Discord moderation bot that automatically catch
 - **Instant Protection** — Automatically bans spammers the moment they post in the trap channel. Zero delay, zero manual work.
 - **Server Safety** — Stops spam before it spreads. Compromised accounts are caught and notified before they can do damage.
 - **Saves Time** — Reduces moderator workload by handling spam automatically so your team can focus on the community.
-- **Easy to Use** — Two commands to set up. 12 optional experiments to customize. A web dashboard to manage everything.
+- **Easy to Use** — Two commands to set up. 11 optional experiments to customize. A web dashboard to manage everything.
 - **Multilingual Warnings** — Warning message in 8 languages: English, German, Indonesian, Malay, Portuguese, Russian, Spanish, and Arabic.
-- **Account Recovery** — Soft-banned users receive a DM with account recovery steps and can rejoin when their account is secure.
+- **Account Recovery** — Soft-banned users receive a DM with account recovery steps and a fresh rejoin invite once their account is secure.
+- **Public Kick Counter** — A pinned, live-updating embed in the trap channel showing everyone how many spam accounts have been removed.
 - **Web Dashboard** — View stats, customize messages, manage roles, and configure settings from a branded web dashboard with Discord OAuth login.
-- **12 Experiments** — Channel warmer, random renaming, reinvite links, timeout-first, and more. Toggle them on or off anytime.
+- **11 Experiments** — Channel warmer, random renaming, timeout-first, and more. Toggle them on or off anytime.
 - **Role-Based Permissions** — Control which roles can manage the bot. Falls back to Ban Members + Manage Server if no roles are set. Server owner always has access.
 - **Auto-Channel Creation** — Bot automatically creates the trap channel when joining a new server (requires Manage Channels permission).
 
@@ -81,13 +82,12 @@ Toggle experiments on or off with `/spamtrap toggle`. Each experiment changes a 
 | Experiment | Description |
 |---|---|
 | **Forward Message** | Include the caught spam message content in the log embed. |
-| **Reinvite** | Include a server invite link in the DM sent to the caught user. |
-| **No DM** | Skip sending a DM to the caught user. |
+| **No DM** | Skip sending a DM to the caught user. (A rejoin invite is otherwise always included in the DM by default.) |
 | **No Warning** | Skip posting the warning message when setting a trap channel. |
 | **Channel Warmer** | Periodically send and delete a message in the trap channel to keep it visible in the channel list for spam bots. |
 | **Random Channel Name** | Randomly rename the trap channel daily from a curated list of common channel names to make it blend in. |
 | **Random Name Chaos** | Randomly rename the trap channel daily using completely random words. Mutually exclusive with Random Channel Name. |
-| **Timeout First** | Timeout the user for 5 minutes before banning, giving mods time to review. |
+| **Timeout First** | Timeout the user for 1 hour before banning. |
 | **Only Recent Delete** | Only delete messages from the last 24 hours instead of purging all messages during softban. |
 | **Many Traps** | Allow up to 5 trap channels instead of 1. Required for `/spamtrap channels`. |
 | **Ensure Deletion** | After banning, verify the spam message is deleted and force-delete if still present. |
@@ -116,7 +116,7 @@ Use these placeholders in your custom messages:
 | `{{trap:channel:mention}}` | Trap channel mention (#channel) |
 | `{{user:mention}}` | Caught user mention |
 | `{{user:id}}` | Caught user ID |
-| `{{reinvite:link}}` | Server invite link |
+| `{{reinvite:link}}` | Server invite link (available if you want to place it manually in a custom message; otherwise it's appended automatically) |
 | `{{trap:moderation-count}}` | Total catch count |
 
 ---
@@ -204,11 +204,11 @@ Message in trap channel
 |---|---|
 | Ban Members | Banning and soft-banning caught users |
 | Manage Channels | Auto-creating the trap channel on join |
-| Manage Messages | Deleting spam messages |
+| Manage Messages | Deleting spam messages, pinning the kick counter embed |
 | Moderate Members | Timeout functionality (Timeout First experiment) |
 | View Channels | Reading messages in the trap channel |
-| Send Messages | Posting warnings and log embeds |
-| Create Instant Invite | Reinvite experiment |
+| Send Messages | Posting warnings, log embeds, and the kick counter |
+| Create Instant Invite | Generating the rejoin link included in every DM |
 | Read Message History | Ensuring message deletion |
 | Manage Roles | (Optional) Role hierarchy checks |
 
