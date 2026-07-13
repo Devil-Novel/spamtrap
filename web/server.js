@@ -1,6 +1,7 @@
 const express = require('express');
 const session = require('cookie-session');
 const path = require('path');
+const crypto = require('crypto');
 const { PermissionsBitField } = require('discord.js');
 const store = require('../lib/store');
 
@@ -78,20 +79,34 @@ function startDashboard(client) {
   }
 
   // ── Auth: redirect to Discord OAuth2 ──
+  // Generates a random `state` value tied to this session so /auth/callback
+  // can verify the request actually originated here, not from an attacker
+  // replaying/forging a callback (login CSRF).
   app.get('/auth/discord', (req, res) => {
+    const state = crypto.randomBytes(16).toString('hex');
+    req.session.oauthState = state;
+
     const params = new URLSearchParams({
       client_id: CLIENT_ID,
       redirect_uri: REDIRECT_URI,
       response_type: 'code',
       scope: 'identify guilds',
+      state,
     });
     res.redirect(`https://discord.com/api/oauth2/authorize?${params}`);
   });
 
   // ── Auth: callback from Discord ──
   app.get('/auth/callback', async (req, res) => {
-    const { code } = req.query;
+    const { code, state } = req.query;
+    const expectedState = req.session.oauthState;
+    req.session.oauthState = null; // one-time use regardless of outcome
+
     if (!code) return res.redirect('/');
+    if (!state || !expectedState || state !== expectedState) {
+      console.error('[DASHBOARD] OAuth state mismatch - possible CSRF attempt or expired session');
+      return res.redirect('/?error=invalid_state');
+    }
 
     try {
       // Exchange code for tokens

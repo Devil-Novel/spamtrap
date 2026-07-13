@@ -212,19 +212,20 @@ async function handleCatch(message, guildConfig) {
   }
 
   // 7) Send the DM now that the user is already actioned. A slow DM delivery
-  // or reinvite-link creation can no longer delay the ban above.
+  // or invite creation can no longer delay the ban above. The rejoin link is
+  // always included (not gated behind an experiment) - if invite creation
+  // fails for any reason, we fall back to a generic rejoin line instead of
+  // leaving a broken/blank link in the message.
   if (!guildConfig.experiments.noDm) {
     let dmText = guildConfig.customMessages.dm || DEFAULT_DM;
-    let reinviteLink = '';
-    if (guildConfig.experiments.reinvite) {
-      try {
-        const invite = await message.channel.createInvite({ maxAge: 7 * 24 * 60 * 60, maxUses: 1, unique: true });
-        reinviteLink = `\n\nRejoin link: ${invite.url}`;
-      } catch (_) {}
-    }
+    let rejoinLine = "Once your account is secure, you're welcome to rejoin the server.";
+    try {
+      const invite = await message.channel.createInvite({ maxAge: 7 * 24 * 60 * 60, maxUses: 1, unique: true });
+      rejoinLine = `Once your account is secure, you're welcome to rejoin using this link: ${invite.url}`;
+    } catch (_) {}
     dmText = replaceVars(dmText, { actionText: actText, serverName, trapChannelLink, trapChannelMention });
     try {
-      await member.send(dmText + reinviteLink);
+      await member.send(`${dmText}\n\n${rejoinLine}`);
     } catch (_) {
       // user has DMs closed - ignore
     }
@@ -233,6 +234,17 @@ async function handleCatch(message, guildConfig) {
   // 8) Log
   const { guildCount, globalCount } = store.incrementCatch(guildId);
   store.pushRecentAction(guildId, { userId: caughtUserId, action: actText, timestamp: Date.now() });
+
+  // Keep every trap channel's public counter in sync, not just the one that
+  // caught this particular message - otherwise counters drift apart under
+  // the Many Traps experiment.
+  for (const trapChannelId of guildConfig.trapChannels) {
+    const trapChannel =
+      trapChannelId === message.channel.id
+        ? message.channel
+        : await message.guild.channels.fetch(trapChannelId).catch(() => null);
+    if (trapChannel) await postOrUpdateKickCounter(trapChannel, guildId, guildCount);
+  }
 
   let logText = guildConfig.customMessages.log || DEFAULT_LOG;
   logText = replaceVars(logText, { actionText: actText, serverName, trapChannelLink, trapChannelMention });
@@ -313,6 +325,40 @@ async function postWarning(channel, guildConfig) {
   } catch (err) {
     console.error(`[WARNING] Failed to post warning in #${channel.name} (${channel.id}): ${err.message}`);
     return { ok: false, error: err };
+  }
+}
+
+function buildKickCounterEmbed(count) {
+  return new EmbedBuilder()
+    .setColor(0xf47521)
+    .setDescription(`\u{1F36F} **Spam Trap Kicks:** ${count}`);
+}
+
+// Posts (and pins) a small public embed showing the running kick count for
+// this trap channel, or edits it in place if one already exists there. This
+// is separate from the multilingual warning message - it's a live counter
+// visible to every member, not just mods.
+async function postOrUpdateKickCounter(channel, guildId, count) {
+  const g = store.getGuild(guildId);
+  const existingId = (g.kickCounterMessages || {})[channel.id];
+  const embed = buildKickCounterEmbed(count);
+
+  if (existingId) {
+    try {
+      const msg = await channel.messages.fetch(existingId);
+      await msg.edit({ embeds: [embed] });
+      return;
+    } catch (_) {
+      // message was deleted/unpinned - fall through and recreate it below
+    }
+  }
+
+  try {
+    const msg = await channel.send({ embeds: [embed] });
+    store.setKickCounterMessage(guildId, channel.id, msg.id);
+    await msg.pin().catch(() => {});
+  } catch (err) {
+    console.error(`[COUNTER] Failed to post kick counter in #${channel.name} (${channel.id}): ${err.message}`);
   }
 }
 
@@ -464,6 +510,7 @@ client.on('interactionCreate', async (interaction) => {
               flags: MessageFlags.Ephemeral,
             });
           }
+          await postOrUpdateKickCounter(channel, guildId, g.catchCount || 0);
           return interaction.reply(`${E.protection} Trap channel set to <#${channel.id}>. Watching now.`);
         }
 
@@ -500,7 +547,11 @@ client.on('interactionCreate', async (interaction) => {
           const failed = [];
           for (const c of channels) {
             const result = await postWarning(c, g);
-            if (!result.ok) failed.push(c);
+            if (!result.ok) {
+              failed.push(c);
+              continue;
+            }
+            await postOrUpdateKickCounter(c, guildId, g.catchCount || 0);
           }
           const dupeNote = rawChannels.length !== channels.length ? ` (duplicates removed)` : '';
           let reply = `${E.protection} Trap channels set: ${channels.map((c) => `<#${c.id}>`).join(', ')}${dupeNote}`;
@@ -688,6 +739,8 @@ client.on('guildCreate', async (guild) => {
     if (!result.ok) {
       console.error(`[JOIN] Channel created in ${guild.name} but failed to post warning: ${result.error.message}`);
     }
+
+    await postOrUpdateKickCounter(channel, guild.id, 0);
 
     console.log(`[JOIN] Setup complete for ${guild.name}`);
   } catch (err) {
