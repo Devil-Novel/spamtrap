@@ -328,6 +328,13 @@ async function maybeDeleteOldAutoChannel(guild, g, newChannelIds) {
   }
 }
 
+// Same brand orange used by the Status/Stats/Roles/Kick-Counter embeds, so
+// the warning message matches the rest of the bot instead of looking like a
+// plain, un-styled message.
+function buildWarningEmbed(text) {
+  return new EmbedBuilder().setColor(0xf47521).setDescription(text);
+}
+
 // Never throws: a channel with no access to send to would otherwise crash
 // whatever command triggered this (e.g. leave a slash command interaction
 // hanging with no response). Callers should check `.ok`.
@@ -335,7 +342,7 @@ async function postWarning(channel, guildConfig) {
   if (guildConfig.experiments.noWarning) return { ok: true, skipped: true };
   const text = guildConfig.customMessages.warning || DEFAULT_WARNING;
   try {
-    await channel.send(text);
+    await channel.send({ embeds: [buildWarningEmbed(text)] });
     return { ok: true };
   } catch (err) {
     console.error(`[WARNING] Failed to post warning in #${channel.name} (${channel.id}): ${err.message}`);
@@ -346,7 +353,7 @@ async function postWarning(channel, guildConfig) {
 function buildKickCounterEmbed(count) {
   return new EmbedBuilder()
     .setColor(0xf47521)
-    .setDescription(`\u{1F36F} **Spam Trap Kicks:** ${count}`);
+    .setDescription(`${E.protection} **Spam Trap Kicks:** ${count}`);
 }
 
 // Posts (and pins) a small public embed showing the running kick count for
@@ -388,34 +395,46 @@ async function dailyTick() {
     const g = store.getGuild(guildId);
     if (!g.trapChannels.length) continue;
 
-    const primaryChannelId = g.trapChannels[0];
-    let channel;
-    try {
-      channel = await client.channels.fetch(primaryChannelId);
-    } catch (_) {
-      continue;
-    }
-    if (!channel) continue;
+    // Previously only trapChannels[0] ever got warmed/renamed, so under the
+    // Many Traps experiment every channel past the first kept its original
+    // name forever - defeating the point of blending in. Now every trap
+    // channel gets the same daily treatment.
+    const doWarm = g.experiments.channelWarmer && now - (g.lastWarm || 0) > DAY;
+    const doRename = (g.experiments.randomChannelName || g.experiments.randomNameChaos) && now - (g.lastRename || 0) > DAY;
+    if (!doWarm && !doRename) continue;
 
-    // Channel Warmer
-    if (g.experiments.channelWarmer && now - (g.lastWarm || 0) > DAY) {
+    for (const channelId of g.trapChannels) {
+      let channel;
       try {
-        const warmMsg = await channel.send('\u{1FAA4}');
-        setTimeout(() => warmMsg.delete().catch(() => {}), 12 * 60 * 60 * 1000);
-      } catch (_) {}
-      g.lastWarm = now;
-      store.saveGuild(guildId, g);
+        channel = await client.channels.fetch(channelId);
+      } catch (_) {
+        continue;
+      }
+      if (!channel) continue;
+
+      if (doWarm) {
+        try {
+          const warmMsg = await channel.send('\u{1FAA4}');
+          setTimeout(() => warmMsg.delete().catch(() => {}), 12 * 60 * 60 * 1000);
+        } catch (_) {}
+      }
+
+      if (doRename) {
+        const newName = g.experiments.randomNameChaos ? randomChaosName() : randomWord();
+        try {
+          await channel.setName(newName, 'Spam Trap: scheduled rename');
+        } catch (_) {}
+      }
     }
 
-    // Random Channel Name / Random Name Chaos (mutually exclusive)
-    if ((g.experiments.randomChannelName || g.experiments.randomNameChaos) && now - (g.lastRename || 0) > DAY) {
-      const newName = g.experiments.randomNameChaos ? randomChaosName() : randomWord();
-      try {
-        await channel.setName(newName, 'Spam Trap: scheduled rename');
-      } catch (_) {}
-      g.lastRename = now;
-      store.saveGuild(guildId, g);
-    }
+    // This loop can span several awaited Discord API calls per guild, so use
+    // updateGuild() rather than saveGuild(g) - a catch could have updated
+    // catchCount/recentActions/kickCounterMessages on disk while we were
+    // busy sending/renaming, and we only mean to touch the timestamps here.
+    store.updateGuild(guildId, (fresh) => {
+      if (doWarm) fresh.lastWarm = now;
+      if (doRename) fresh.lastRename = now;
+    });
   }
 }
 
@@ -511,7 +530,7 @@ client.on('interactionCreate', async (interaction) => {
       if (interaction.commandName === 'spamtrap') {
         const sub = interaction.options.getSubcommand();
         const guildId = interaction.guild.id;
-        const g = store.getGuild(guildId);
+        let g = store.getGuild(guildId);
 
         if (sub === 'channel') {
           // This does several sequential Discord API calls before it can
@@ -523,8 +542,15 @@ client.on('interactionCreate', async (interaction) => {
           await interaction.deferReply();
           const channel = interaction.options.getChannel('channel');
           await maybeDeleteOldAutoChannel(interaction.guild, g, [channel.id]);
-          g.trapChannels = [channel.id];
-          store.saveGuild(guildId, g);
+          // Re-read fresh before saving: a message catch could have written
+          // catchCount/recentActions/kickCounterMessages to disk during the
+          // await above, and saving our stale in-memory `g` would silently
+          // wipe that out. updateGuild() only touches the fields we set here.
+          const autoTrapChannelId = g.autoTrapChannelId;
+          g = store.updateGuild(guildId, (fresh) => {
+            fresh.trapChannels = [channel.id];
+            fresh.autoTrapChannelId = autoTrapChannelId;
+          });
           const result = await postWarning(channel, g);
           if (!result.ok) {
             return await interaction.editReply({
@@ -566,8 +592,13 @@ client.on('interactionCreate', async (interaction) => {
           const channels = rawChannels.filter((c) => (seen.has(c.id) ? false : (seen.add(c.id), true)));
           const newIds = channels.map((c) => c.id);
           await maybeDeleteOldAutoChannel(interaction.guild, g, newIds);
-          g.trapChannels = newIds;
-          store.saveGuild(guildId, g);
+          // Same reasoning as /spamtrap channel: re-read fresh so we don't
+          // clobber a concurrent catch's writes with our stale copy of `g`.
+          const autoTrapChannelId = g.autoTrapChannelId;
+          g = store.updateGuild(guildId, (fresh) => {
+            fresh.trapChannels = newIds;
+            fresh.autoTrapChannelId = autoTrapChannelId;
+          });
           const failed = [];
           for (const c of channels) {
             const result = await postWarning(c, g);

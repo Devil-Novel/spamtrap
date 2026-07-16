@@ -208,14 +208,17 @@ Message in trap channel
 | Moderate Members | Timeout functionality (Timeout First experiment) |
 | View Channels | Reading messages in the trap channel |
 | Send Messages | Posting warnings, log embeds, and the kick counter |
+| Embed Links | Rendering the warning, log, and kick counter as embeds instead of plain text |
 | Create Instant Invite | Generating the rejoin link included in every DM |
 | Read Message History | Ensuring message deletion |
 | Manage Roles | (Optional) Role hierarchy checks |
 
 **Invite URL with all permissions:**
 ```
-https://discord.com/oauth2/authorize?client_id=1523811499766976723&permissions=1099511704597&scope=bot%20applications.commands
+https://discord.com/oauth2/authorize?client_id=1523811499766976723&permissions=1099511720981&scope=bot%20applications.commands
 ```
+
+**If the bot is already in your server** and was invited before this permission was added, it won't be able to post the warning message (embeds require this permission - without it, sending one fails outright instead of falling back to plain text). Re-invite using the URL above, or grant **Embed Links** to the bot's role directly in Server Settings → Roles.
 
 ### Required Intents
 
