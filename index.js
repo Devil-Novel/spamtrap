@@ -335,6 +335,16 @@ function buildWarningEmbed(text) {
   return new EmbedBuilder().setColor(0xf47521).setDescription(text);
 }
 
+// Missing the "Embed Links" permission makes an embed send fail outright.
+// Rather than leave the trap channel with no warning at all (protection still
+// works, but nobody's told why they got banned), fall back to sending the
+// same text as a plain message - which only needs "Send Messages". This is
+// what kept older servers working before the embed conversion.
+function isEmbedPermError(err) {
+  // 50013 = Missing Permissions, 50001 = Missing Access
+  return err && (err.code === 50013 || err.code === 50001);
+}
+
 // Never throws: a channel with no access to send to would otherwise crash
 // whatever command triggered this (e.g. leave a slash command interaction
 // hanging with no response). Callers should check `.ok`.
@@ -345,6 +355,18 @@ async function postWarning(channel, guildConfig) {
     await channel.send({ embeds: [buildWarningEmbed(text)] });
     return { ok: true };
   } catch (err) {
+    // Embed failed (likely no Embed Links permission) - retry as plain text
+    // so the warning still appears.
+    if (isEmbedPermError(err)) {
+      try {
+        await channel.send(text);
+        console.warn(`[WARNING] Posted plain-text warning in #${channel.name} (${channel.id}) - bot lacks Embed Links permission.`);
+        return { ok: true, plainTextFallback: true };
+      } catch (err2) {
+        console.error(`[WARNING] Failed to post warning (even as plain text) in #${channel.name} (${channel.id}): ${err2.message}`);
+        return { ok: false, error: err2 };
+      }
+    }
     console.error(`[WARNING] Failed to post warning in #${channel.name} (${channel.id}): ${err.message}`);
     return { ok: false, error: err };
   }
@@ -368,7 +390,13 @@ async function postOrUpdateKickCounter(channel, guildId, count) {
   if (existingId) {
     try {
       const msg = await channel.messages.fetch(existingId);
-      await msg.edit({ embeds: [embed] });
+      try {
+        await msg.edit({ embeds: [embed] });
+      } catch (editErr) {
+        // Counter was posted as plain text (no Embed Links), so it has no
+        // embed to update - edit the plain content instead.
+        await msg.edit({ content: `${E.protection} **Spam Trap Kicks:** ${count}` });
+      }
       return;
     } catch (_) {
       // message was deleted/unpinned - fall through and recreate it below
@@ -380,6 +408,16 @@ async function postOrUpdateKickCounter(channel, guildId, count) {
     store.setKickCounterMessage(guildId, channel.id, msg.id);
     await msg.pin().catch(() => {});
   } catch (err) {
+    // No Embed Links permission - post the counter as a plain message so the
+    // running total is still visible, just unstyled.
+    if (isEmbedPermError(err)) {
+      try {
+        const msg = await channel.send(`${E.protection} **Spam Trap Kicks:** ${count}`);
+        store.setKickCounterMessage(guildId, channel.id, msg.id);
+        await msg.pin().catch(() => {});
+        return;
+      } catch (_) {}
+    }
     console.error(`[COUNTER] Failed to post kick counter in #${channel.name} (${channel.id}): ${err.message}`);
   }
 }
