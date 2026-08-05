@@ -505,6 +505,15 @@ const { startDashboard } = require('./web/server');
 client.once('clientReady', async () => {
   console.log(`Spam Trap is running as ${client.user.tag}`);
 
+  // Visible on every boot: how many servers' configs actually survived this
+  // deploy. If this reads 0 (or far lower than expected) right after a
+  // redeploy that wasn't a fresh install, storage isn't persisting - check
+  // that DATABASE_PATH points at a mounted Railway Volume.
+  const configuredCount = store
+    .getAllGuildIds()
+    .filter((id) => store.getGuild(id).trapChannels.length > 0).length;
+  console.log(`[STORAGE] Loaded ${store.getAllGuildIds().length} known guild(s), ${configuredCount} with a trap channel configured.`);
+
   // Start the web dashboard
   startDashboard(client);
 

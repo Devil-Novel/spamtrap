@@ -5,7 +5,7 @@ The Discord bot that stops spammers before they spread.
 Spam Trap is a free, open-source Discord moderation bot that automatically catches and removes spammers and compromised accounts by monitoring dedicated trap channels. Any non-admin user who sends a message in a trap channel is instantly soft-banned, notified via DM with account recovery steps, and logged for your mod team.
 
 **Website:** [spamtrap.help](https://spamtrap.help)
-**Invite:** [Add to your server](https://discord.com/oauth2/authorize?client_id=1523811499766976723&permissions=1099511704597&scope=bot%20applications.commands)
+**Invite:** [Add to your server](https://discord.com/oauth2/authorize?client_id=1523811499766976723&permissions=1099511720981&scope=bot%20applications.commands)
 **Support:** [Discord Server](https://discord.gg/WuJMbkNZBJ)
 
 ---
@@ -254,6 +254,7 @@ https://discord.com/oauth2/authorize?client_id=1523811499766976723&permissions=1
 | `CLIENT_SECRET` | Yes (for dashboard) | OAuth2 client secret |
 | `BASE_URL` | Yes (for dashboard) | Your Railway URL |
 | `SESSION_SECRET` | Recommended | Express session secret |
+| `DATABASE_PATH` | **Yes** | Path to the JSON database file. Must point inside a mounted persistent Volume (e.g. `/data/db.json`) - see "Persistent Storage" below. |
 | `GUILD_ID` | No | For testing: register commands to one server only |
 
 ### Deploy to Railway
@@ -261,8 +262,22 @@ https://discord.com/oauth2/authorize?client_id=1523811499766976723&permissions=1
 1. Push to GitHub
 2. Create a new project on [Railway](https://railway.app) from your GitHub repo
 3. Add environment variables in the Variables tab
-4. Add a Volume mounted at `/data` for persistent storage
+4. Add a Volume mounted at `/data` for persistent storage, and set `DATABASE_PATH=/data/db.json` (see "Persistent Storage" below - **required**, not optional)
 5. Railway auto-deploys on every push
+
+### Persistent Storage
+
+Spam Trap stores every server's trap channel, log channel, action, experiments, and catch count in a single JSON file (`data/db.json` by default). Railway's container filesystem is **ephemeral**: anything written to disk is wiped on every redeploy or restart unless it lives on a mounted Volume.
+
+If `DATABASE_PATH` is not pointing at a Volume, the bot looks fine right after deploying (new servers configure themselves on join and work normally), but the **next** deploy silently wipes every server's settings back to defaults. Since `guildCreate` only fires once, the moment a server actually joins, it never re-fires to repair a server that was already configured - so previously-working servers quietly stop moderating anything (`/spamtrap status` will show `Trap channel(s): Not set`) with no error, no crash, and no re-invite prompt.
+
+**To set it up correctly:**
+
+1. In the Railway service, go to the Volumes tab and attach a new Volume mounted at `/data`.
+2. Set the `DATABASE_PATH` environment variable to `/data/db.json`.
+3. Redeploy. On boot, the bot logs `[STORAGE] Loaded N known guild(s), M with a trap channel configured.` - confirm `M` matches what you expect. If a fresh deploy ever logs `[STORAGE WARNING] No database found...` when servers were already configured, the Volume isn't mounted correctly.
+
+**If servers were already affected** (configured before the Volume was attached, now showing "Not set"): once the Volume is mounted, run `/spamtrap channel` one more time on each affected server to relink it to its existing `#spam-trap` channel. After that, settings persist permanently across all future deploys - no need to remove or re-invite the bot.
 
 ### Register Commands
 
@@ -324,7 +339,7 @@ The default warning message is displayed in 8 languages:
 ## Links
 
 - **Website:** https://spamtrap.help
-- **Invite Bot:** https://discord.com/oauth2/authorize?client_id=1523811499766976723&permissions=1099511704597&scope=bot%20applications.commands
+- **Invite Bot:** https://discord.com/oauth2/authorize?client_id=1523811499766976723&permissions=1099511720981&scope=bot%20applications.commands
 - **Discord Server:** https://discord.gg/WuJMbkNZBJ
 - **GitHub:** https://github.com/aimanmoustafa/spamtrap
 - **Privacy Policy:** https://spamtrap.help/privacy
