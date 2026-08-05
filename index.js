@@ -296,12 +296,34 @@ async function handleCatch(message, guildConfig) {
   }
 }
 
+// Flattens an embed into plain text for servers without Embed Links, so the
+// log entry still gets posted instead of silently vanishing.
+function embedToPlainText(embed) {
+  const data = embed.data || {};
+  const lines = [];
+  if (data.title) lines.push(`**${data.title}**`);
+  if (data.description) lines.push(data.description);
+  for (const field of data.fields || []) {
+    lines.push(`**${field.name}:** ${field.value}`);
+  }
+  return lines.join('\n');
+}
+
 async function logToChannel(guild, guildConfig, text, embed) {
   if (!guildConfig.logChannel) return;
   try {
     const channel = await guild.channels.fetch(guildConfig.logChannel);
     if (!channel) return;
-    await channel.send({ content: text || undefined, embeds: embed ? [embed] : undefined });
+    try {
+      await channel.send({ content: text || undefined, embeds: embed ? [embed] : undefined });
+    } catch (err) {
+      // No Embed Links permission - post the same info as plain text rather
+      // than dropping the log entry entirely.
+      if (embed && isEmbedPermError(err)) {
+        const fallbackText = [text, embedToPlainText(embed)].filter(Boolean).join('\n');
+        await channel.send({ content: fallbackText }).catch(() => {});
+      }
+    }
   } catch (_) {}
 }
 
