@@ -73,6 +73,12 @@ All commands require the configured allowed roles, or Ban Members + Manage Serve
 | `/spamtrap removerole @role` | Remove a role from managing Spam Trap. (Admin/Owner only) |
 | `/spamtrap roles` | View all roles that can manage the bot. |
 
+### Owner Only
+
+| Command | Description |
+|---|---|
+| `/spamtrap servers` | List every server the bot is in, with member counts and trap-channel status. Restricted to whichever Discord user id is set as `BOT_OWNER_ID`; does nothing (and stays invisible in `/spamtrap info`) if that variable isn't set. Also requires the usual Ban Members + Manage Server (or allowed role) access in the server where you run it, same as every other `/spamtrap` command. |
+
 ---
 
 ## Experiments
@@ -255,6 +261,7 @@ https://discord.com/oauth2/authorize?client_id=1523811499766976723&permissions=1
 | `BASE_URL` | Yes (for dashboard) | Your Railway URL |
 | `SESSION_SECRET` | Recommended | Express session secret |
 | `DATABASE_PATH` | **Yes** | Path to the JSON database file. Must point inside a mounted persistent Volume (e.g. `/data/db.json`) - see "Persistent Storage" below. |
+| `BOT_OWNER_ID` | No | Your Discord user id. Enables `/spamtrap servers` (owner-only cross-server list). Leave unset to disable that command. |
 | `GUILD_ID` | No | For testing: register commands to one server only |
 
 ### Deploy to Railway

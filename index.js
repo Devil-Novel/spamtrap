@@ -10,6 +10,7 @@ const {
   TextInputBuilder,
   TextInputStyle,
   MessageFlags,
+  AttachmentBuilder,
   REST,
   Routes,
 } = require('discord.js');
@@ -17,6 +18,14 @@ require('dotenv').config();
 
 const store = require('./lib/store');
 const { replaceVars, DEFAULT_WARNING, DEFAULT_DM, DEFAULT_LOG } = require('./lib/messages');
+
+// Discord user id of the bot's operator. Deliberately separate from
+// hasPermission()'s per-guild check (guild owner / allowed roles / Ban
+// Members+Manage Server) - this gates a command that lists every server the
+// bot is in across ALL guilds, which would otherwise leak other communities'
+// names/ids/member counts to any admin of any single server that has the bot.
+// Unset (undefined) means nobody passes the check - safe default, not open.
+const BOT_OWNER_ID = process.env.BOT_OWNER_ID;
 
 const E = {
   done: '<:Done:1523817641653829774>',
@@ -783,6 +792,35 @@ client.on('interactionCreate', async (interaction) => {
               { name: 'How it works', value: 'If no roles are set, anyone with **Ban Members + Manage Server** can use the bot.\nOnce you add roles, **only those roles** can use commands.\nThe server owner always has access.' }
             );
           return await interaction.reply({ embeds: [rolesEmbed], flags: MessageFlags.Ephemeral });
+        }
+
+        // ── Bot owner only: cross-server list, gated on BOT_OWNER_ID, not ──
+        // hasPermission()'s per-guild check above, since this exposes every
+        // guild's name/id/member count, not just this one.
+        if (sub === 'servers') {
+          if (!BOT_OWNER_ID || interaction.user.id !== BOT_OWNER_ID) {
+            return await interaction.reply({
+              content: `${E.protection} This command is restricted to the bot owner.`,
+              flags: MessageFlags.Ephemeral,
+            });
+          }
+          await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+          // One readDb() call, not one per guild - avoids N synchronous file
+          // reads blocking the event loop as the server count grows.
+          const db = store.readDb();
+          const guildList = [...client.guilds.cache.values()]
+            .sort((a, b) => b.memberCount - a.memberCount)
+            .map((gu) => {
+              const cfg = db.guilds[gu.id];
+              const configured = cfg && cfg.trapChannels && cfg.trapChannels.length > 0;
+              return `${gu.name} (${gu.id}) | ${gu.memberCount} members | ${configured ? 'configured' : 'NOT SET'}`;
+            });
+          const body = `Spam Trap is in ${guildList.length} server(s).\n\n${guildList.join('\n')}`;
+          const attachment = new AttachmentBuilder(Buffer.from(body, 'utf8'), { name: 'spamtrap-servers.txt' });
+          return await interaction.editReply({
+            content: `${E.protection} Spam Trap is in **${guildList.length}** server(s). Full list attached.`,
+            files: [attachment],
+          });
         }
       }
       return;

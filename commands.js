@@ -57,7 +57,8 @@ const commands = [
       sub.setName('removerole').setDescription('Remove a role from managing Spam Trap')
         .addRoleOption((opt) => opt.setName('role').setDescription('The role to remove').setRequired(true))
     )
-    .addSubcommand((sub) => sub.setName('roles').setDescription('View all roles that can manage Spam Trap')),
+    .addSubcommand((sub) => sub.setName('roles').setDescription('View all roles that can manage Spam Trap'))
+    .addSubcommand((sub) => sub.setName('servers').setDescription('(Bot owner only) List every server Spam Trap is currently in')),
 
   new SlashCommandBuilder()
     .setName('spamtrap-messages')
