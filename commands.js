@@ -58,7 +58,12 @@ const commands = [
         .addRoleOption((opt) => opt.setName('role').setDescription('The role to remove').setRequired(true))
     )
     .addSubcommand((sub) => sub.setName('roles').setDescription('View all roles that can manage Spam Trap'))
-    .addSubcommand((sub) => sub.setName('servers').setDescription('(Bot owner only) List every server Spam Trap is currently in')),
+    .addSubcommand((sub) => sub.setName('servers').setDescription('(Bot owner only) List every server Spam Trap is currently in'))
+    .addSubcommand((sub) =>
+      sub
+        .setName('notify-reset')
+        .setDescription('(Bot owner only) DM owners of servers with no trap channel set, asking them to reconfigure')
+    ),
 
   new SlashCommandBuilder()
     .setName('spamtrap-messages')

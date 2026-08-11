@@ -78,6 +78,7 @@ All commands require the configured allowed roles, or Ban Members + Manage Serve
 | Command | Description |
 |---|---|
 | `/spamtrap servers` | List every server the bot is in, with member counts and trap-channel status. Restricted to whichever Discord user id is set as `BOT_OWNER_ID`; does nothing (and stays invisible in `/spamtrap info`) if that variable isn't set. Also requires the usual Ban Members + Manage Server (or allowed role) access in the server where you run it, same as every other `/spamtrap` command. |
+| `/spamtrap notify-reset` | DMs the owner of every server with no trap channel set, asking them to run `/spamtrap channel` again. Meant as a one-time cleanup after the Railway storage-wipe bug. Marks each server as notified so re-running it later never messages the same owner twice. Same `BOT_OWNER_ID` restriction as `/spamtrap servers`. |
 
 ---
 

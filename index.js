@@ -27,6 +27,14 @@ const { replaceVars, DEFAULT_WARNING, DEFAULT_DM, DEFAULT_LOG } = require('./lib
 // Unset (undefined) means nobody passes the check - safe default, not open.
 const BOT_OWNER_ID = process.env.BOT_OWNER_ID;
 
+// Fixed, non-templated text - sent once per server via /spamtrap notify-reset
+// to the server owner, for servers whose trap channel got wiped by the
+// Railway ephemeral-storage bug (see README "Persistent Storage").
+const RESET_NOTICE_DM =
+  "Hey! Quick heads up about Spam Trap in your server. A hosting issue on our end reset your trap channel setting, " +
+  "so it's currently not watching for spam. To fix it, just run /spamtrap channel and pick your trap channel again " +
+  "(or a new one), it takes a few seconds and nothing needs to be reinstalled. Sorry for the hassle, and thanks for using Spam Trap!";
+
 const E = {
   done: '<:Done:1523817641653829774>',
   experiments: '<:Experiments:1524000040828539011>',
@@ -819,6 +827,62 @@ client.on('interactionCreate', async (interaction) => {
           const attachment = new AttachmentBuilder(Buffer.from(body, 'utf8'), { name: 'spamtrap-servers.txt' });
           return await interaction.editReply({
             content: `${E.protection} Spam Trap is in **${guildList.length}** server(s). Full list attached.`,
+            files: [attachment],
+          });
+        }
+
+        // ── Bot owner only: one-time DM to owners of servers whose trap ──
+        // channel got wiped by the Railway storage bug. Marks each guild as
+        // notified so re-running this later never double-messages anyone.
+        if (sub === 'notify-reset') {
+          if (!BOT_OWNER_ID || interaction.user.id !== BOT_OWNER_ID) {
+            return await interaction.reply({
+              content: `${E.protection} This command is restricted to the bot owner.`,
+              flags: MessageFlags.Ephemeral,
+            });
+          }
+          await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+          const db = store.readDb();
+          const targetIds = Object.keys(db.guilds).filter((id) => {
+            const cfg = db.guilds[id];
+            const notConfigured = !cfg.trapChannels || cfg.trapChannels.length === 0;
+            return notConfigured && !cfg.notifiedAboutReset && client.guilds.cache.has(id);
+          });
+
+          const results = [];
+          for (const id of targetIds) {
+            const gu = client.guilds.cache.get(id);
+            let status;
+            try {
+              const owner = await gu.fetchOwner();
+              await owner.user.send(RESET_NOTICE_DM);
+              status = 'DM sent';
+            } catch (err) {
+              status = `failed (${err.message})`;
+            }
+            // Mark as notified either way - a failed DM (owner has server
+            // DMs closed) will keep failing on retry, so this stops the
+            // command from re-attempting the same server forever.
+            store.updateGuild(id, (fresh) => {
+              fresh.notifiedAboutReset = true;
+            });
+            results.push(`${gu.name} (${id}) | ${status}`);
+            // Small delay between DMs to stay well clear of Discord's rate limits.
+            await new Promise((resolve) => setTimeout(resolve, 350));
+          }
+
+          const sentCount = results.filter((r) => r.endsWith('DM sent')).length;
+          const failedCount = results.length - sentCount;
+          if (results.length === 0) {
+            return await interaction.editReply({
+              content: `${E.done} No servers needed a reminder - everything with no trap channel set has already been notified.`,
+            });
+          }
+          const body = `Notify-reset run: ${sentCount} sent, ${failedCount} failed, ${results.length} total.\n\n${results.join('\n')}`;
+          const attachment = new AttachmentBuilder(Buffer.from(body, 'utf8'), { name: 'spamtrap-notify-reset.txt' });
+          return await interaction.editReply({
+            content: `${E.protection} Notified **${sentCount}** server owner(s), **${failedCount}** failed (likely DMs closed). Full breakdown attached.`,
             files: [attachment],
           });
         }
