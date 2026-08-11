@@ -843,11 +843,15 @@ client.on('interactionCreate', async (interaction) => {
           }
           await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-          const db = store.readDb();
-          const targetIds = Object.keys(db.guilds).filter((id) => {
-            const cfg = db.guilds[id];
+          // Iterate every guild the bot is currently in (live Discord data),
+          // not Object.keys(db.guilds) - a guild with zero interactions
+          // since the storage wipe has no store entry at all yet, so reading
+          // only existing entries silently skipped most "not set" servers.
+          // store.getGuild() lazily creates a default entry for those.
+          const targetIds = [...client.guilds.cache.keys()].filter((id) => {
+            const cfg = store.getGuild(id);
             const notConfigured = !cfg.trapChannels || cfg.trapChannels.length === 0;
-            return notConfigured && !cfg.notifiedAboutReset && client.guilds.cache.has(id);
+            return notConfigured && !cfg.notifiedAboutReset;
           });
 
           const results = [];
