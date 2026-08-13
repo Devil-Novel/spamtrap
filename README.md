@@ -136,6 +136,7 @@ The web dashboard provides a browser-based interface for managing Spam Trap acro
 - View total servers, active traps, and global catch count
 - Per-server stats with recent actions timeline
 - Customize warning, DM, and log messages
+- Set trap channel(s) and log channel from a dropdown, no slash command needed (posts the same warning/kick-counter as `/spamtrap channel` behind the scenes; respects the Many Traps experiment for multiple channels)
 - View and manage allowed roles (add/remove from dropdown)
 - View current configuration and active experiments
 - Discord OAuth2 login (username, avatar, server list only)

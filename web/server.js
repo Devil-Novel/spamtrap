@@ -2,8 +2,9 @@ const express = require('express');
 const session = require('cookie-session');
 const path = require('path');
 const crypto = require('crypto');
-const { PermissionsBitField } = require('discord.js');
+const { PermissionsBitField, ChannelType } = require('discord.js');
 const store = require('../lib/store');
+const { maybeDeleteOldAutoChannel, postWarning, postOrUpdateKickCounter } = require('../lib/trapChannel');
 
 function startDashboard(client) {
   const CLIENT_ID = process.env.CLIENT_ID || client.user.id;
@@ -302,6 +303,101 @@ function startDashboard(client) {
     config.allowedRoles = validRoleIds;
     store.saveGuild(req.params.id, config);
     res.json({ success: true });
+  });
+
+  // ── API: get channels (for the trap channel / log channel editors) ──
+  app.get('/api/guild/:id/channels', async (req, res) => {
+    const guild = await requireGuildAccess(req, res, req.params.id);
+    if (!guild) return;
+    const config = store.getGuild(req.params.id);
+
+    const textChannels = guild.channels.cache
+      .filter((c) => c.type === ChannelType.GuildText)
+      .sort((a, b) => a.position - b.position)
+      .map((c) => ({ id: c.id, name: c.name }));
+
+    res.json({
+      channels: textChannels,
+      trapChannels: config.trapChannels || [],
+      logChannel: config.logChannel || null,
+      manyTraps: !!config.experiments.manyTraps,
+    });
+  });
+
+  // ── API: set trap channel(s) ──
+  // Mirrors /spamtrap channel and /spamtrap channels exactly (same
+  // maybeDeleteOldAutoChannel/postWarning/postOrUpdateKickCounter helpers
+  // from lib/trapChannel.js), so setting it from the dashboard behaves
+  // identically to setting it in Discord.
+  app.post('/api/guild/:id/channels', async (req, res) => {
+    const guild = await requireGuildAccess(req, res, req.params.id);
+    if (!guild) return;
+    const guildId = req.params.id;
+    let g = store.getGuild(guildId);
+    const { trapChannels } = req.body;
+
+    if (!Array.isArray(trapChannels) || trapChannels.length === 0) {
+      return res.status(400).json({ error: 'Pick at least one trap channel' });
+    }
+    if (trapChannels.length > 1 && !g.experiments.manyTraps) {
+      return res.status(400).json({ error: 'Enable the Many Traps experiment first (/spamtrap toggle) to set more than one trap channel' });
+    }
+    if (trapChannels.length > 5) {
+      return res.status(400).json({ error: 'A maximum of 5 trap channels is supported' });
+    }
+
+    // Only accept channel ids that actually exist on this guild, and dedupe -
+    // same safety /spamtrap channels applies.
+    const seen = new Set();
+    const validIds = trapChannels.filter((id) => {
+      if (typeof id !== 'string' || !guild.channels.cache.has(id)) return false;
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+    if (validIds.length === 0) {
+      return res.status(400).json({ error: "None of the provided channels exist on this server" });
+    }
+
+    await maybeDeleteOldAutoChannel(guild, g, validIds);
+    // Re-read fresh before saving, same reasoning as the slash command: a
+    // message catch could have written catchCount/kickCounterMessages to
+    // disk during the awaits above.
+    const autoTrapChannelId = g.autoTrapChannelId;
+    g = store.updateGuild(guildId, (fresh) => {
+      fresh.trapChannels = validIds;
+      fresh.autoTrapChannelId = autoTrapChannelId;
+    });
+
+    const failed = [];
+    for (const id of validIds) {
+      const channel = guild.channels.cache.get(id);
+      const result = await postWarning(channel, g);
+      if (!result.ok) {
+        failed.push({ id, name: channel.name });
+        continue;
+      }
+      await postOrUpdateKickCounter(channel, guildId, g.catchCount || 0);
+    }
+
+    res.json({ success: true, trapChannels: validIds, failed });
+  });
+
+  // ── API: set or clear the log channel ──
+  app.post('/api/guild/:id/log', async (req, res) => {
+    const guild = await requireGuildAccess(req, res, req.params.id);
+    if (!guild) return;
+    const guildId = req.params.id;
+    const { logChannel } = req.body;
+
+    if (logChannel !== null && logChannel !== undefined && (typeof logChannel !== 'string' || !guild.channels.cache.has(logChannel))) {
+      return res.status(400).json({ error: 'logChannel must be a valid channel id on this server, or null to clear it' });
+    }
+
+    const config = store.getGuild(guildId);
+    config.logChannel = logChannel || null;
+    store.saveGuild(guildId, config);
+    res.json({ success: true, logChannel: config.logChannel });
   });
 
   // ── API: global overview ──

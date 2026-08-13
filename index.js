@@ -18,6 +18,14 @@ require('dotenv').config();
 
 const store = require('./lib/store');
 const { replaceVars, DEFAULT_WARNING, DEFAULT_DM, DEFAULT_LOG } = require('./lib/messages');
+const {
+  maybeDeleteOldAutoChannel,
+  buildWarningEmbed,
+  isEmbedPermError,
+  postWarning,
+  buildKickCounterEmbed,
+  postOrUpdateKickCounter,
+} = require('./lib/trapChannel');
 
 // Discord user id of the bot's operator. Deliberately separate from
 // hasPermission()'s per-guild check (guild owner / allowed roles / Ban
@@ -35,18 +43,9 @@ const RESET_NOTICE_DM =
   "so it's currently not watching for spam. To fix it, just run /spamtrap channel and pick your trap channel again " +
   "(or a new one), it takes a few seconds and nothing needs to be reinstalled. Sorry for the hassle, and thanks for using Spam Trap!";
 
-const E = {
-  done: '<:Done:1523817641653829774>',
-  experiments: '<:Experiments:1524000040828539011>',
-  safety: '<:ServerSafety:1524000037166645331>',
-  time: '<:SavesTime:1524000035577135114>',
-  easy: '<:EasytoUse:1524000034079768716>',
-  multilingual: '<:MultilingualWarnings:1524000032771149824>',
-  dashboard: '<:WebDashboard:1524000030556426354>',
-  recovery: '<:AccountRecovery:1524000028689961060>',
-  protection: '<:InstantProtection:1524000022830518272>',
-  discord: '<:Discord:1524000021198930031>',
-};
+// Moved to lib/emojis.js so lib/trapChannel.js (used by both the bot and the
+// dashboard) references the exact same ids instead of a second copy.
+const E = require('./lib/emojis');
 const DONE_EMOJI = E.done;
 
 const client = new Client({
@@ -345,121 +344,11 @@ async function logToChannel(guild, guildConfig, text, embed) {
 }
 
 // ---------- Warning message (multilingual) ----------
-
-// Deletes the previously auto-created trap channel when the Delete Old Trap
-// experiment is on and the admin is switching to a different channel.
-async function maybeDeleteOldAutoChannel(guild, g, newChannelIds) {
-  if (!g.experiments.deleteOldTrap) return;
-  const oldId = g.autoTrapChannelId;
-  if (!oldId) return;
-  if (newChannelIds.includes(oldId)) return; // still in use, keep it
-
-  try {
-    const oldChannel = guild.channels.cache.get(oldId) || (await guild.channels.fetch(oldId).catch(() => null));
-    if (oldChannel) {
-      await oldChannel.delete('Spam Trap: replaced by a new trap channel (Delete Old Trap experiment)');
-      console.log(`[TRAP] Deleted old auto-created channel ${oldId} in ${guild.name}`);
-    }
-  } catch (err) {
-    console.error(`[TRAP] Failed to delete old auto-created channel in ${guild.name}: ${err.message}`);
-  } finally {
-    g.autoTrapChannelId = null;
-  }
-}
-
-// Same brand orange used by the Status/Stats/Roles/Kick-Counter embeds, so
-// the warning message matches the rest of the bot instead of looking like a
-// plain, un-styled message.
-function buildWarningEmbed(text) {
-  return new EmbedBuilder().setColor(0xf47521).setDescription(text);
-}
-
-// Missing the "Embed Links" permission makes an embed send fail outright.
-// Rather than leave the trap channel with no warning at all (protection still
-// works, but nobody's told why they got banned), fall back to sending the
-// same text as a plain message - which only needs "Send Messages". This is
-// what kept older servers working before the embed conversion.
-function isEmbedPermError(err) {
-  // 50013 = Missing Permissions, 50001 = Missing Access
-  return err && (err.code === 50013 || err.code === 50001);
-}
-
-// Never throws: a channel with no access to send to would otherwise crash
-// whatever command triggered this (e.g. leave a slash command interaction
-// hanging with no response). Callers should check `.ok`.
-async function postWarning(channel, guildConfig) {
-  if (guildConfig.experiments.noWarning) return { ok: true, skipped: true };
-  const text = guildConfig.customMessages.warning || DEFAULT_WARNING;
-  try {
-    await channel.send({ embeds: [buildWarningEmbed(text)] });
-    return { ok: true };
-  } catch (err) {
-    // Embed failed (likely no Embed Links permission) - retry as plain text
-    // so the warning still appears.
-    if (isEmbedPermError(err)) {
-      try {
-        await channel.send(text);
-        console.warn(`[WARNING] Posted plain-text warning in #${channel.name} (${channel.id}) - bot lacks Embed Links permission.`);
-        return { ok: true, plainTextFallback: true };
-      } catch (err2) {
-        console.error(`[WARNING] Failed to post warning (even as plain text) in #${channel.name} (${channel.id}): ${err2.message}`);
-        return { ok: false, error: err2 };
-      }
-    }
-    console.error(`[WARNING] Failed to post warning in #${channel.name} (${channel.id}): ${err.message}`);
-    return { ok: false, error: err };
-  }
-}
-
-function buildKickCounterEmbed(count) {
-  return new EmbedBuilder()
-    .setColor(0xf47521)
-    .setDescription(`${E.protection} **Spam Trap Kicks:** ${count}`);
-}
-
-// Posts (and pins) a small public embed showing the running kick count for
-// this trap channel, or edits it in place if one already exists there. This
-// is separate from the multilingual warning message - it's a live counter
-// visible to every member, not just mods.
-async function postOrUpdateKickCounter(channel, guildId, count) {
-  const g = store.getGuild(guildId);
-  const existingId = (g.kickCounterMessages || {})[channel.id];
-  const embed = buildKickCounterEmbed(count);
-
-  if (existingId) {
-    try {
-      const msg = await channel.messages.fetch(existingId);
-      try {
-        await msg.edit({ embeds: [embed] });
-      } catch (editErr) {
-        // Counter was posted as plain text (no Embed Links), so it has no
-        // embed to update - edit the plain content instead.
-        await msg.edit({ content: `${E.protection} **Spam Trap Kicks:** ${count}` });
-      }
-      return;
-    } catch (_) {
-      // message was deleted/unpinned - fall through and recreate it below
-    }
-  }
-
-  try {
-    const msg = await channel.send({ embeds: [embed] });
-    store.setKickCounterMessage(guildId, channel.id, msg.id);
-    await msg.pin().catch(() => {});
-  } catch (err) {
-    // No Embed Links permission - post the counter as a plain message so the
-    // running total is still visible, just unstyled.
-    if (isEmbedPermError(err)) {
-      try {
-        const msg = await channel.send(`${E.protection} **Spam Trap Kicks:** ${count}`);
-        store.setKickCounterMessage(guildId, channel.id, msg.id);
-        await msg.pin().catch(() => {});
-        return;
-      } catch (_) {}
-    }
-    console.error(`[COUNTER] Failed to post kick counter in #${channel.name} (${channel.id}): ${err.message}`);
-  }
-}
+// maybeDeleteOldAutoChannel, buildWarningEmbed, isEmbedPermError,
+// postWarning, buildKickCounterEmbed, and postOrUpdateKickCounter now live in
+// lib/trapChannel.js (imported above) so the dashboard's channel editor
+// posts the exact same warning/counter as these slash commands, instead of a
+// second copy of this logic that could quietly drift out of sync.
 
 // ---------- Daily tasks: channel warmer + renaming ----------
 
