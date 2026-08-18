@@ -193,7 +193,10 @@ a{color:var(--orange);text-decoration:none}code{background:var(--bg2);padding:2p
 .d-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:16px}
 .d-card h3{font-size:15px;margin-bottom:14px;display:flex;align-items:center;gap:8px;font-weight:700}
 .d-card h3 img{width:20px;height:20px}
-.back-btn{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--text2);margin-bottom:16px;cursor:pointer;padding:6px 0;font-weight:500}.back-btn:hover{color:var(--orange)}
+.btn-back{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px 14px 8px 11px;margin-bottom:16px;cursor:pointer;transition:all .15s}
+.btn-back:hover{background:var(--surface3);border-color:var(--orange);color:var(--orange)}
+.btn-back svg{transition:transform .15s}
+.btn-back:hover svg{transform:translateX(-3px)}
 .guild-header{display:flex;align-items:center;gap:16px;margin-bottom:24px}
 .guild-header .guild-icon{width:60px;height:60px;font-size:24px;border-radius:16px}.guild-header .guild-icon img{width:60px;height:60px;border-radius:16px}
 .guild-header h2{font-size:24px;font-weight:800}.guild-header span{font-size:14px;color:var(--text2)}
@@ -338,7 +341,7 @@ textarea:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba
 <!-- DASHBOARD -->
 <div class="dash" id="dashPage">
 <div class="container">
-<button class="btn btn-ghost btn-sm" style="margin-bottom:16px" onclick="goHome()">&#8592; Back to homepage</button>
+<button class="btn-back" onclick="goHome()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Back to homepage</button>
 <div id="dashWelcome" class="dash-welcome" style="display:none"></div>
 <div id="dashContent">
 <div id="guildsView">
@@ -347,7 +350,7 @@ textarea:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba
 <div class="card-grid" id="guildList"><div class="loading"><div class="spinner"></div><p style="margin-top:10px">Loading...</p></div></div>
 </div>
 <div id="guildView" style="display:none">
-<div class="back-btn" role="button" tabindex="0" onclick="showGuilds()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showGuilds()}">&#8592; Back to servers</div>
+<button class="btn-back" onclick="showGuilds()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Back to servers</button>
 <div class="guild-header" id="guildHeader"></div>
 <div class="tabs" role="tablist"><div class="tab active" role="tab" tabindex="0" aria-selected="true" onclick="switchTab('stats',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();switchTab('stats',this)}">Stats</div><div class="tab" role="tab" tabindex="0" aria-selected="false" onclick="switchTab('messages',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();switchTab('messages',this)}">Messages</div><div class="tab" role="tab" tabindex="0" aria-selected="false" onclick="switchTab('config',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();switchTab('config',this)}">Config</div></div>
 <div class="tab-content active" id="tab-stats"><div class="d-stat-row" id="guildStats"></div><div class="d-card"><h3><img src="/badge.png" alt=""> Recent actions</h3><div id="recentActions"></div></div></div>
