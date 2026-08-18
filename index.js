@@ -27,6 +27,14 @@ const {
   postOrUpdateKickCounter,
 } = require('./lib/trapChannel');
 
+// Moved to lib/emojis.js so lib/trapChannel.js (used by both the bot and the
+// dashboard) references the exact same ids instead of a second copy. Declared
+// here, before anything below that uses E in a template literal (RESET_NOTICE_DM,
+// etc.) - a `const` used before its own declaration line throws, it isn't
+// hoisted the way a function declaration is.
+const E = require('./lib/emojis');
+const DONE_EMOJI = E.done;
+
 // Discord user id of the bot's operator. Deliberately separate from
 // hasPermission()'s per-guild check (guild owner / allowed roles / Ban
 // Members+Manage Server) - this gates a command that lists every server the
@@ -39,14 +47,10 @@ const BOT_OWNER_ID = process.env.BOT_OWNER_ID;
 // to the server owner, for servers whose trap channel got wiped by the
 // Railway ephemeral-storage bug (see README "Persistent Storage").
 const RESET_NOTICE_DM =
-  "Hey! Quick heads up about Spam Trap in your server. A hosting issue on our end reset your trap channel setting, " +
-  "so it's currently not watching for spam. To fix it, just run /spamtrap channel and pick your trap channel again " +
-  "(or a new one), it takes a few seconds and nothing needs to be reinstalled. Sorry for the hassle, and thanks for using Spam Trap!";
-
-// Moved to lib/emojis.js so lib/trapChannel.js (used by both the bot and the
-// dashboard) references the exact same ids instead of a second copy.
-const E = require('./lib/emojis');
-const DONE_EMOJI = E.done;
+  `${E.protection} Good news about Spam Trap! We fixed a hosting issue that was resetting server settings, and it will not happen again. ` +
+  "If your trap channel or log channel isn't set yet, just run /spamtrap channel one more time, it'll stick for good from now on.\n\n" +
+  `${E.dashboard} We also made the dashboard much easier to use, you can now set your trap channel(s) and log channel right from spamtrap.help, no commands needed.\n\n` +
+  `${E.done} Thanks for using Spam Trap and for your patience while we got this sorted!`;
 
 const client = new Client({
   intents: [
@@ -732,12 +736,19 @@ client.on('interactionCreate', async (interaction) => {
           }
           await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
+          // force: true sends RESET_NOTICE_DM to every current server
+          // regardless of trap channel status or prior notification - used
+          // for a one-off broadcast (e.g. "this is fixed now, thanks!")
+          // rather than the normal "only servers that still need fixing" run.
+          const force = interaction.options.getBoolean('force') || false;
+
           // Iterate every guild the bot is currently in (live Discord data),
           // not Object.keys(db.guilds) - a guild with zero interactions
           // since the storage wipe has no store entry at all yet, so reading
           // only existing entries silently skipped most "not set" servers.
           // store.getGuild() lazily creates a default entry for those.
           const targetIds = [...client.guilds.cache.keys()].filter((id) => {
+            if (force) return true;
             const cfg = store.getGuild(id);
             const notConfigured = !cfg.trapChannels || cfg.trapChannels.length === 0;
             return notConfigured && !cfg.notifiedAboutReset;

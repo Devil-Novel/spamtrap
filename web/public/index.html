@@ -23,7 +23,7 @@
 <meta name="twitter:title" content="Spam Trap - Stop spammers before they spread.">
 <meta name="twitter:description" content="Free Discord moderation bot. Auto-catches spam bots and compromised accounts. 8 languages. Web dashboard. Zero configuration.">
 <meta name="twitter:image" content="/logo.png">
-<link rel="icon" href="/badge.png">
+<link rel="icon" href="https://cdn.discordapp.com/emojis/1524000021198930031.png?size=64">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--bg:#060a10;--bg2:#0c1018;--bg3:#111820;--surface:#0f1620;--surface2:#162030;--surface3:#1c2a40;--border:#1a2538;--border2:#25354f;--text:#eaeef3;--text2:#7d8da0;--text3:#4d5e72;--orange:#f47521;--orange2:#ff9240;--orange-glow:rgba(244,117,33,.12);--red:#e83535;--green:#4ade80;--amber:#f5a623;--font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
@@ -40,7 +40,7 @@ a{color:var(--orange);text-decoration:none}code{background:var(--bg2);padding:2p
 .nav-links a:hover{color:var(--text);background:rgba(255,255,255,.05)}
 .hamburger-btn{display:none;background:none;border:none;color:var(--text);font-size:22px;line-height:1;cursor:pointer;padding:6px 8px;border-radius:8px}
 .hamburger-btn:hover{background:rgba(255,255,255,.05)}
-.scroll-top-btn{position:fixed;right:20px;bottom:24px;width:44px;height:44px;border-radius:50%;background:var(--orange);color:#fff;border:none;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(244,117,33,.4);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:150}
+.scroll-top-btn{position:fixed;right:20px;bottom:24px;width:44px;height:44px;border-radius:50%;background:var(--orange);color:#fff;border:none;font-size:20px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(244,117,33,.4);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:150}
 .scroll-top-btn.show{opacity:1;pointer-events:auto}
 .scroll-top-btn:hover{transform:translateY(-2px)}
 .btn{padding:9px 20px;border-radius:8px;border:none;font:600 14px var(--font);cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:7px;text-decoration:none}
@@ -307,7 +307,7 @@ textarea:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba
   <p>Easy commands. Zero configuration. Ultimate protection.</p>
   <div class="cta-buttons">
     <a href="https://discord.com/oauth2/authorize?client_id=1523811499766976723&permissions=1099511720981&scope=bot%20applications.commands" class="btn btn-primary" target="_blank" rel="noopener noreferrer">Invite Spam Trap</a>
-    <a href="/auth/discord" class="btn btn-outline">Open Dashboard</a>
+    <a href="/auth/discord" class="btn btn-outline" id="openDashBtn">Open Dashboard</a>
   </div>
 </section>
 
@@ -365,12 +365,13 @@ function timeAgo(ts){const d=(Date.now()-ts)/1000;if(d<60)return'just now';if(d<
 })();
 api('/api/overview').then(d=>{document.getElementById('pServers').textContent=d.totalServers||'0';document.getElementById('pCatches').textContent=d.totalCatches||'0'}).catch(()=>{});
 let dashUser=null;
-api('/api/me').then(me=>{if(me.loggedIn){dashUser=me.user;const b=document.getElementById('dashBtn');b.textContent='Dashboard';b.onclick=e=>{e.preventDefault();showDash()}}});
+function wireDashButtons(){['dashBtn','openDashBtn'].forEach(id=>{const b=document.getElementById(id);if(b){b.textContent='Dashboard';b.onclick=e=>{e.preventDefault();showDash()}}})}
+api('/api/me').then(me=>{if(me.loggedIn){dashUser=me.user;wireDashButtons()}});
 function toggleMobileNav(){const nav=document.getElementById('navLinks');const btn=document.getElementById('hamburgerBtn');const open=nav.classList.toggle('open');btn.setAttribute('aria-expanded',open?'true':'false');btn.innerHTML=open?'&#10005;':'&#9776;'}
 function closeMobileNav(){const nav=document.getElementById('navLinks');nav.classList.remove('open');document.getElementById('hamburgerBtn').setAttribute('aria-expanded','false');document.getElementById('hamburgerBtn').innerHTML='&#9776;'}
 function scrollToTop(){window.scrollTo({top:0,behavior:'smooth'})}
 window.addEventListener('scroll',()=>{const btn=document.getElementById('scrollTopBtn');if(window.scrollY>400)btn.classList.add('show');else btn.classList.remove('show')});
-function goHome(){document.getElementById('dashPage').classList.remove('active');document.getElementById('landingPage').classList.remove('hidden');document.querySelectorAll('.hide-mobile').forEach(a=>a.style.display='');const b=document.getElementById('dashBtn');b.textContent='Dashboard';b.href='/auth/discord';b.onclick=dashUser?(e=>{e.preventDefault();showDash()}):null;closeMobileNav();window.scrollTo({top:0,behavior:'smooth'})}
+function goHome(){document.getElementById('dashPage').classList.remove('active');document.getElementById('landingPage').classList.remove('hidden');document.querySelectorAll('.hide-mobile').forEach(a=>a.style.display='');['dashBtn','openDashBtn'].forEach(id=>{const b=document.getElementById(id);if(!b)return;b.textContent='Dashboard';b.href='/auth/discord';b.onclick=dashUser?(e=>{e.preventDefault();showDash()}):null});closeMobileNav();window.scrollTo({top:0,behavior:'smooth'})}
 function showDash(){document.getElementById('landingPage').classList.add('hidden');document.getElementById('dashPage').classList.add('active');document.querySelectorAll('.hide-mobile').forEach(a=>a.style.display='none');closeMobileNav();const b=document.getElementById('dashBtn');b.textContent='Logout';b.href='/auth/logout';b.onclick=null;
 if(dashUser){const w=document.getElementById('dashWelcome');w.style.display='flex';w.innerHTML=`<div class="dash-welcome-left"><img src="${dashUser.avatar}" alt=""><div><h2>Welcome back, ${esc(dashUser.globalName)}</h2><span>Manage your Spam Trap servers</span></div></div><div class="dash-welcome-right"><a href="/auth/logout" class="btn btn-ghost btn-sm">Logout</a></div>`}
 loadOverview();loadGuilds()}

@@ -63,6 +63,12 @@ const commands = [
       sub
         .setName('notify-reset')
         .setDescription('(Bot owner only) DM owners of servers with no trap channel set, asking them to reconfigure')
+        .addBooleanOption((opt) =>
+          opt
+            .setName('force')
+            .setDescription('Resend to every current server, ignoring trap channel status and previous notifications')
+            .setRequired(false)
+        )
     ),
 
   new SlashCommandBuilder()
