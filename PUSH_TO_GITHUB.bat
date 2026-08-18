@@ -21,7 +21,7 @@ git add .
 git commit -m "Spam Trap bot v2"
 git branch -M main
 git remote remove origin 2>nul
-git remote add origin https://github.com/aimanmoustafa/spamtrap.git
+git remote add origin https://github.com/Devil-Novel/spamtrap.git
 git push -u origin main --force
 echo.
 echo ==============================

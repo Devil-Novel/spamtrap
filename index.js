@@ -886,4 +886,15 @@ client.on('guildCreate', async (guild) => {
   }
 });
 
+// ---------- guildDelete: cleanup ----------
+// Fires when the bot is removed from a server (kicked, or the server
+// deletes it). Purges that server's stored config/logs entirely - this is
+// what makes the Privacy Policy's "remove your data by removing Spam Trap
+// from your server" claim actually true, and keeps db.json from growing
+// forever with orphaned entries for servers that left long ago.
+client.on('guildDelete', (guild) => {
+  console.log(`[LEAVE] Removed from ${guild.name} (${guild.id}) - deleting stored data.`);
+  store.deleteGuild(guild.id);
+});
+
 client.login(process.env.BOT_TOKEN || process.env.DISCORD_TOKEN);

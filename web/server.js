@@ -1,4 +1,5 @@
 const express = require('express');
+const compression = require('compression');
 const session = require('cookie-session');
 const path = require('path');
 const crypto = require('crypto');
@@ -23,8 +24,20 @@ function startDashboard(client) {
       return res.redirect(301, `https://${req.headers.host}${req.originalUrl}`);
     }
     res.setHeader('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
+    // Baseline hardening headers. Not a full CSP (the dashboard loads Google
+    // Analytics + Discord CDN images/emoji from various origins, so a strict
+    // CSP would need real testing to avoid breaking those); these three cost
+    // nothing and have no compatibility risk.
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     next();
   });
+
+  // Gzip/brotli every response - the dashboard's index.html is a large
+  // single-file page (inline CSS/JS), so compression meaningfully cuts
+  // transfer size on every visit.
+  app.use(compression());
 
   app.use(express.json());
   app.use(
@@ -418,9 +431,20 @@ function startDashboard(client) {
     res.sendFile(path.join(__dirname, 'public', 'terms.html'));
   });
 
-  // ── SPA fallback ──
-  app.get('*', (req, res) => {
+  // ── Home ──
+  app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  });
+
+  // ── Anything else unmatched: a real 404, not a silent 200 ──
+  // The old catch-all (`app.get('*', ...)`) served index.html with an
+  // implicit 200 for every unmatched URL, including typos and dead links -
+  // bad for SEO (looks like infinite duplicate pages to crawlers) and for
+  // any tooling checking link validity. The site has no other client-side
+  // routes to preserve (everything real is one of the routes above, or a
+  // static file already served by express.static earlier).
+  app.use((req, res) => {
+    res.status(404).sendFile(path.join(__dirname, 'public', 'index.html'));
   });
 
   // ── Start ──

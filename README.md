@@ -350,7 +350,7 @@ The default warning message is displayed in 8 languages:
 - **Website:** https://spamtrap.help
 - **Invite Bot:** https://discord.com/oauth2/authorize?client_id=1523811499766976723&permissions=1099511720981&scope=bot%20applications.commands
 - **Discord Server:** https://discord.gg/WuJMbkNZBJ
-- **GitHub:** https://github.com/aimanmoustafa/spamtrap
+- **GitHub:** https://github.com/Devil-Novel/spamtrap
 - **Privacy Policy:** https://spamtrap.help/privacy
 - **Terms of Service:** https://spamtrap.help/terms
 - **Contact:** aimanmoustafaa@gmail.com

@@ -13,17 +13,34 @@
 </script>
 <title>Spam Trap - The bot that catches bots</title>
 <meta name="description" content="Discord bot that catches spam bots and compromised accounts using a trap channel.">
+<link rel="canonical" href="https://spamtrap.help/">
 <meta name="theme-color" content="#f47521">
 <meta property="og:title" content="Spam Trap - The Discord bot that stops spammers before they spread.">
 <meta property="og:description" content="Catch spammers before they reach your community. Spam Trap bot instantly detects and removes spam and compromised accounts through a dedicated trap channel.">
-<meta property="og:image" content="/logo.png">
+<meta property="og:image" content="/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta property="og:url" content="https://spamtrap.help">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Spam Trap - Stop spammers before they spread.">
 <meta name="twitter:description" content="Free Discord moderation bot. Auto-catches spam bots and compromised accounts. 8 languages. Web dashboard. Zero configuration.">
-<meta name="twitter:image" content="/logo.png">
+<meta name="twitter:image" content="/og-image.png">
 <link rel="icon" href="https://cdn.discordapp.com/emojis/1524000021198930031.png?size=64">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.json">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Spam Trap",
+  "url": "https://spamtrap.help",
+  "applicationCategory": "Discord Bot",
+  "operatingSystem": "Discord",
+  "description": "Discord bot that catches spam bots and compromised accounts using a trap channel.",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+}
+</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--bg:#060a10;--bg2:#0c1018;--bg3:#111820;--surface:#0f1620;--surface2:#162030;--surface3:#1c2a40;--border:#1a2538;--border2:#25354f;--text:#eaeef3;--text2:#7d8da0;--text3:#4d5e72;--orange:#f47521;--orange2:#ff9240;--orange-glow:rgba(244,117,33,.12);--red:#e83535;--green:#4ade80;--amber:#f5a623;--font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
@@ -222,13 +239,13 @@ textarea:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba
     <a href="/privacy" class="hide-mobile">Privacy</a>
     <a href="/terms" class="hide-mobile">Terms</a>
     <a href="https://discord.gg/WuJMbkNZBJ" target="_blank" rel="noopener noreferrer" title="Join our gaming hub" style="display:flex;align-items:center;gap:5px;padding:7px 13px"><span>Community Hub</span><img src="https://cdn.discordapp.com/emojis/1524147951071658114.png" style="width:22px;height:22px" alt=""></a>
-    <a href="https://www.linkedin.com/in/aimanmoustafa/" target="_blank" rel="noopener noreferrer" title="LinkedIn" style="display:flex;align-items:center;padding:7px 13px"><img src="https://cdn.discordapp.com/emojis/1524148005081583796.png" style="width:22px;height:22px" alt=""></a>
+    <a href="https://www.linkedin.com/in/aimanmoustafa/" target="_blank" rel="noopener noreferrer" title="LinkedIn" aria-label="LinkedIn" style="display:flex;align-items:center;padding:7px 13px"><img src="https://cdn.discordapp.com/emojis/1524148005081583796.png" style="width:22px;height:22px" alt="LinkedIn"></a>
     <a href="/auth/discord" class="btn btn-ghost btn-sm" id="dashBtn">Dashboard</a>
     <a href="https://discord.com/oauth2/authorize?client_id=1523811499766976723&permissions=1099511720981&scope=bot%20applications.commands" class="btn btn-primary btn-sm" target="_blank" rel="noopener noreferrer">Invite Bot</a>
   </div>
   <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false" onclick="toggleMobileNav()">&#9776;</button>
 </nav>
-<button class="scroll-top-btn" id="scrollTopBtn" aria-label="Back to top" onclick="scrollToTop()">&#8593;</button>
+<button class="scroll-top-btn" id="scrollTopBtn" aria-label="Back to top" onclick="scrollToTop()"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
 
 <div class="landing" id="landingPage">
 
@@ -321,7 +338,7 @@ textarea:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba
 <!-- DASHBOARD -->
 <div class="dash" id="dashPage">
 <div class="container">
-<div class="back-btn" role="button" tabindex="0" onclick="goHome()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();goHome()}">&#8592; Back to homepage</div>
+<button class="btn btn-ghost btn-sm" style="margin-bottom:16px" onclick="goHome()">&#8592; Back to homepage</button>
 <div id="dashWelcome" class="dash-welcome" style="display:none"></div>
 <div id="dashContent">
 <div id="guildsView">
