@@ -893,7 +893,7 @@ client.on('guildCreate', async (guild) => {
 // from your server" claim actually true, and keeps db.json from growing
 // forever with orphaned entries for servers that left long ago.
 client.on('guildDelete', (guild) => {
-  console.log(`[LEAVE] Removed from ${guild.name} (${guild.id}) - deleting stored data.`);
+  console.log(`[LEAVE] Removed from ${guild.name || 'an uncached server'} (${guild.id}) - deleting stored data.`);
   store.deleteGuild(guild.id);
 });
 
