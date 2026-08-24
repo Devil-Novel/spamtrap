@@ -450,7 +450,12 @@ client.once('clientReady', async () => {
 
 client.on('messageCreate', async (message) => {
   try {
-    if (message.author.bot || !message.guild) return;
+    // message.member is null for webhook-sent messages (Discord doesn't
+    // always flag webhook authors as "bot", so that alone won't catch them)
+    // and for a couple of other edge cases where there's no real server
+    // member behind the message. There's nothing to ban/moderate in that
+    // case, so skip it instead of letting handleCatch throw on member.id.
+    if (message.author.bot || !message.guild || !message.member) return;
     const g = store.getGuild(message.guild.id);
     if (!g.trapChannels.includes(message.channel.id)) return;
     await handleCatch(message, g);
