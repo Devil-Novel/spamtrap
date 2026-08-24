@@ -893,8 +893,14 @@ client.on('guildCreate', async (guild) => {
 // from your server" claim actually true, and keeps db.json from growing
 // forever with orphaned entries for servers that left long ago.
 client.on('guildDelete', (guild) => {
-  console.log(`[LEAVE] Removed from ${guild.name || 'an uncached server'} (${guild.id}) - deleting stored data.`);
-  store.deleteGuild(guild.id);
+  // Discord can re-fire this on a fresh boot for a guild we already cleaned
+  // up in a previous deploy (e.g. it's still transiently unavailable to us).
+  // Only log/act when there was actually something left to delete, so this
+  // doesn't spam "[LEAVE] Removed from..." on every single redeploy.
+  const removed = store.deleteGuild(guild.id);
+  if (removed) {
+    console.log(`[LEAVE] Removed from ${guild.name || 'an uncached server'} (${guild.id}) - deleting stored data.`);
+  }
 });
 
 client.login(process.env.BOT_TOKEN || process.env.DISCORD_TOKEN);
