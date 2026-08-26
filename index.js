@@ -217,10 +217,10 @@ function buildTrapPanel(guildId, client) {
     .setColor(0xf47521)
     .setThumbnail(TRAP_BADGE_URL)
     .setDescription(
-      "This channel is a **trap channel** - visible to members but not meant for normal use. " +
-        "Spam bots and compromised accounts often blast messages into every channel they can see, including this one.\n\n" +
+      'This channel is a **trap channel**, visible to members but not meant for normal use. ' +
+        'Spam bots and compromised accounts often blast messages into every channel they can see, including this one.\n\n' +
         `When a message lands here, Spam Trap deletes it immediately and takes action on the account (this server currently: **${actionText(g.action)}**), ` +
-        'DMs the user to explain why, and logs it - all in about a second.'
+        'DMs the user to explain why, and logs it, all in about a second.'
     )
     .addFields(
       { name: 'This server', value: `\`${g.catchCount || 0}\` caught`, inline: true },
