@@ -138,7 +138,7 @@ function buildStatusEmbed(guildId, guild) {
     .addFields(
       { name: 'Trap channel(s)', value: trapChannels },
       { name: 'Log channel', value: g.logChannel ? `<#${g.logChannel}>` : 'Not set' },
-      { name: 'Action', value: g.action },
+      { name: 'Action', value: `\`${g.action}\`` },
       { name: 'Active experiments', value: experimentsOn },
       { name: 'Catch count (this server)', value: `\`${g.catchCount || 0}\`` },
       {
@@ -226,7 +226,7 @@ function buildTrapPanel(guildId, client) {
     .addFields(
       { name: 'This server', value: `\`${g.catchCount || 0}\` caught`, inline: true },
       { name: 'Trap channel(s)', value: `\`${g.trapChannels.length || 0}\``, inline: true },
-      { name: 'Action', value: actionText(g.action), inline: true },
+      { name: 'Action', value: `\`${actionText(g.action)}\``, inline: true },
       { name: 'Most recent catch', value: mostRecentLine, inline: false },
       { name: 'Global (all servers)', value: `\`${db.global.totalCatches || 0}\` caught across \`${globalServers.toLocaleString()}\` servers`, inline: false }
     )
