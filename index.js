@@ -20,10 +20,8 @@ const store = require('./lib/store');
 const { replaceVars, DEFAULT_WARNING, DEFAULT_DM, DEFAULT_LOG } = require('./lib/messages');
 const {
   maybeDeleteOldAutoChannel,
-  buildWarningEmbed,
   isEmbedPermError,
   postWarning,
-  buildKickCounterEmbed,
   postOrUpdateKickCounter,
 } = require('./lib/trapChannel');
 
@@ -278,7 +276,7 @@ async function handleCatch(message, guildConfig) {
       trapChannelId === message.channel.id
         ? message.channel
         : await message.guild.channels.fetch(trapChannelId).catch(() => null);
-    if (trapChannel) await postOrUpdateKickCounter(trapChannel, guildId, guildCount);
+    if (trapChannel) await postOrUpdateKickCounter(trapChannel, guildId, guildConfig, guildCount);
   }
 
   let logText = guildConfig.customMessages.log || DEFAULT_LOG;
@@ -348,11 +346,11 @@ async function logToChannel(guild, guildConfig, text, embed) {
 }
 
 // ---------- Warning message (multilingual) ----------
-// maybeDeleteOldAutoChannel, buildWarningEmbed, isEmbedPermError,
-// postWarning, buildKickCounterEmbed, and postOrUpdateKickCounter now live in
-// lib/trapChannel.js (imported above) so the dashboard's channel editor
-// posts the exact same warning/counter as these slash commands, instead of a
-// second copy of this logic that could quietly drift out of sync.
+// maybeDeleteOldAutoChannel, isEmbedPermError, postWarning, and
+// postOrUpdateKickCounter now live in lib/trapChannel.js (imported above) so
+// the dashboard's channel editor posts the exact same combined
+// warning+counter message as these slash commands, instead of a second copy
+// of this logic that could quietly drift out of sync.
 
 // ---------- Daily tasks: channel warmer + renaming ----------
 
@@ -535,13 +533,13 @@ client.on('interactionCreate', async (interaction) => {
             fresh.trapChannels = [channel.id];
             fresh.autoTrapChannelId = autoTrapChannelId;
           });
-          const result = await postWarning(channel, g);
+          const result = await postWarning(channel, guildId, g);
           if (!result.ok) {
             return await interaction.editReply({
               content: `${E.protection} Trap channel set to <#${channel.id}>, but I couldn't post the warning message there (${result.error.message}). Make sure I have **View Channel** and **Send Messages** permissions in that channel.`,
             });
           }
-          await postOrUpdateKickCounter(channel, guildId, g.catchCount || 0);
+          await postOrUpdateKickCounter(channel, guildId, g, g.catchCount || 0);
           return await interaction.editReply(`${E.protection} Trap channel set to <#${channel.id}>. Watching now.`);
         }
 
@@ -585,12 +583,12 @@ client.on('interactionCreate', async (interaction) => {
           });
           const failed = [];
           for (const c of channels) {
-            const result = await postWarning(c, g);
+            const result = await postWarning(c, guildId, g);
             if (!result.ok) {
               failed.push(c);
               continue;
             }
-            await postOrUpdateKickCounter(c, guildId, g.catchCount || 0);
+            await postOrUpdateKickCounter(c, guildId, g, g.catchCount || 0);
           }
           const dupeNote = rawChannels.length !== channels.length ? ` (duplicates removed)` : '';
           let reply = `${E.protection} Trap channels set: ${channels.map((c) => `<#${c.id}>`).join(', ')}${dupeNote}`;
@@ -878,12 +876,12 @@ client.on('guildCreate', async (guild) => {
     store.saveGuild(guild.id, g);
 
     // Post the warning
-    const result = await postWarning(channel, g);
+    const result = await postWarning(channel, guild.id, g);
     if (!result.ok) {
       console.error(`[JOIN] Channel created in ${guild.name} but failed to post warning: ${result.error.message}`);
     }
 
-    await postOrUpdateKickCounter(channel, guild.id, 0);
+    await postOrUpdateKickCounter(channel, guild.id, g, 0);
 
     console.log(`[JOIN] Setup complete for ${guild.name}`);
   } catch (err) {

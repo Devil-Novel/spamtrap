@@ -385,12 +385,12 @@ function startDashboard(client) {
     const failed = [];
     for (const id of validIds) {
       const channel = guild.channels.cache.get(id);
-      const result = await postWarning(channel, g);
+      const result = await postWarning(channel, guildId, g);
       if (!result.ok) {
         failed.push({ id, name: channel.name });
         continue;
       }
-      await postOrUpdateKickCounter(channel, guildId, g.catchCount || 0);
+      await postOrUpdateKickCounter(channel, guildId, g, g.catchCount || 0);
     }
 
     res.json({ success: true, trapChannels: validIds, failed });
