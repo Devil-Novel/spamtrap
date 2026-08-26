@@ -213,7 +213,7 @@ function buildTrapPanel(guildId, client) {
     : 'No catches yet';
 
   const embed = new EmbedBuilder()
-    .setTitle(`${E.protection} What is Spam Trap?`)
+    .setTitle(`What is Spam Trap? ${E.protection}`)
     .setColor(0xf47521)
     .setThumbnail(TRAP_BADGE_URL)
     .setDescription(
@@ -223,11 +223,11 @@ function buildTrapPanel(guildId, client) {
         'DMs the user to explain why, and logs it - all in about a second.'
     )
     .addFields(
-      { name: 'This server', value: `${g.catchCount || 0} caught`, inline: true },
-      { name: 'Trap channel(s)', value: `${g.trapChannels.length || 0}`, inline: true },
+      { name: 'This server', value: `\`${g.catchCount || 0}\` caught`, inline: true },
+      { name: 'Trap channel(s)', value: `\`${g.trapChannels.length || 0}\``, inline: true },
       { name: 'Action', value: actionText(g.action), inline: true },
       { name: 'Most recent catch', value: mostRecentLine, inline: false },
-      { name: 'Global (all servers)', value: `${db.global.totalCatches || 0} caught across ${globalServers.toLocaleString()} servers`, inline: false }
+      { name: 'Global (all servers)', value: `\`${db.global.totalCatches || 0}\` caught across \`${globalServers.toLocaleString()}\` servers`, inline: false }
     )
     .setFooter({ text: trapStatsFlavor(g.catchCount || 0) });
   const row = new ActionRowBuilder().addComponents(
