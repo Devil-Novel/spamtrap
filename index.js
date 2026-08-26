@@ -19,7 +19,7 @@ const {
 require('dotenv').config();
 
 const store = require('./lib/store');
-const { replaceVars, DEFAULT_WARNING, DEFAULT_DM, DEFAULT_LOG } = require('./lib/messages');
+const { replaceVars, DEFAULT_WARNING, TRANSLATIONS_TEXT, DEFAULT_DM, DEFAULT_LOG } = require('./lib/messages');
 const {
   maybeDeleteOldAutoChannel,
   isEmbedPermError,
@@ -139,7 +139,7 @@ function buildStatusEmbed(guildId, guild) {
       { name: 'Log channel', value: g.logChannel ? `<#${g.logChannel}>` : 'Not set' },
       { name: 'Action', value: g.action },
       { name: 'Active experiments', value: experimentsOn },
-      { name: 'Catch count (this server)', value: String(g.catchCount || 0) },
+      { name: 'Catch count (this server)', value: `\`${g.catchCount || 0}\`` },
       {
         name: 'Custom messages',
         value: `Warning: ${g.customMessages.warning ? 'custom' : 'default'} | DM: ${
@@ -178,8 +178,8 @@ function buildStatsEmbed(guildId) {
     .setTitle(`Spam Trap Stats ${E.dashboard}`)
     .setColor(0xf47521)
     .addFields(
-      { name: 'This server', value: `${g.catchCount || 0} caught` },
-      { name: 'Global (all servers)', value: `${db.global.totalCatches || 0} caught` },
+      { name: 'This server', value: `\`${g.catchCount || 0}\` caught` },
+      { name: 'Global (all servers)', value: `\`${db.global.totalCatches || 0}\` caught` },
       { name: 'Last 5 actions', value: recent }
     );
 }
@@ -354,7 +354,7 @@ async function handleCatch(message, guildConfig) {
       { name: 'User', value: `<@${caughtUserId}> (${caughtUserId})`, inline: true },
       { name: 'Channel', value: trapChannelMention, inline: true },
       { name: 'Result', value: actText, inline: true },
-      { name: 'Catch count', value: `Server: ${guildCount} | Global: ${globalCount}` }
+      { name: 'Catch count', value: `Server: \`${guildCount}\` | Global: \`${globalCount}\`` }
     )
     .setTimestamp();
 
@@ -537,6 +537,19 @@ client.on('interactionCreate', async (interaction) => {
       if (!interaction.guild) return;
       const { embed, row } = buildTrapPanel(interaction.guild.id, interaction.client);
       await interaction.reply({ embeds: [embed], components: [row], flags: MessageFlags.Ephemeral });
+      return;
+    }
+
+    // Same idea as the kicks button above - public, ephemeral, no permission
+    // gate. Shows the multilingual translations that used to be baked into
+    // the warning embed on every message, only to whoever asks for them.
+    if (interaction.isButton() && interaction.customId === 'spamtrap_translations') {
+      if (!interaction.guild) return;
+      const translationsEmbed = new EmbedBuilder()
+        .setTitle(`Translations ${E.multilingual}`)
+        .setColor(0xf47521)
+        .setDescription(TRANSLATIONS_TEXT);
+      await interaction.reply({ embeds: [translationsEmbed], flags: MessageFlags.Ephemeral });
       return;
     }
 
