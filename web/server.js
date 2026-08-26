@@ -5,7 +5,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { PermissionsBitField, ChannelType } = require('discord.js');
 const store = require('../lib/store');
-const { maybeDeleteOldAutoChannel, postWarning, postOrUpdateKickCounter } = require('../lib/trapChannel');
+const { maybeDeleteOldAutoChannel, purgeOldBotMessages, postWarning, postOrUpdateKickCounter } = require('../lib/trapChannel');
 
 function startDashboard(client) {
   const CLIENT_ID = process.env.CLIENT_ID || client.user.id;
@@ -385,6 +385,11 @@ function startDashboard(client) {
     const failed = [];
     for (const id of validIds) {
       const channel = guild.channels.cache.get(id);
+      // Same cleanup as the /spamtrap channel(s) slash commands - clears out
+      // any leftover message from before the warning+counter were merged
+      // into one, so setting it from the dashboard doesn't leave a stale
+      // message behind either.
+      await purgeOldBotMessages(channel);
       const result = await postWarning(channel, guildId, g);
       if (!result.ok) {
         failed.push({ id, name: channel.name });

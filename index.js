@@ -22,6 +22,7 @@ const store = require('./lib/store');
 const { replaceVars, DEFAULT_WARNING, TRANSLATIONS_TEXT, DEFAULT_DM, DEFAULT_LOG } = require('./lib/messages');
 const {
   maybeDeleteOldAutoChannel,
+  purgeOldBotMessages,
   isEmbedPermError,
   postWarning,
   postOrUpdateKickCounter,
@@ -620,6 +621,11 @@ client.on('interactionCreate', async (interaction) => {
             fresh.trapChannels = [channel.id];
             fresh.autoTrapChannelId = autoTrapChannelId;
           });
+          // Clean up any leftover bot messages from a previous setup (e.g. a
+          // server that configured its trap channel before the warning and
+          // counter were merged into one message) so we don't end up with an
+          // old message sitting next to the new one.
+          await purgeOldBotMessages(channel);
           const result = await postWarning(channel, guildId, g);
           if (!result.ok) {
             return await interaction.editReply({
@@ -670,6 +676,7 @@ client.on('interactionCreate', async (interaction) => {
           });
           const failed = [];
           for (const c of channels) {
+            await purgeOldBotMessages(c);
             const result = await postWarning(c, guildId, g);
             if (!result.ok) {
               failed.push(c);
