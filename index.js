@@ -5,6 +5,8 @@ const {
   PermissionsBitField,
   EmbedBuilder,
   ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
   StringSelectMenuBuilder,
   ModalBuilder,
   TextInputBuilder,
@@ -40,6 +42,15 @@ const DONE_EMOJI = E.done;
 // names/ids/member counts to any admin of any single server that has the bot.
 // Unset (undefined) means nobody passes the check - safe default, not open.
 const BOT_OWNER_ID = process.env.BOT_OWNER_ID;
+
+// Shared real links, reused instead of re-typing the invite/permissions
+// bitmask, Discord invite, GitHub repo, and site URL in multiple places
+// (site + here) so they can't quietly drift out of sync.
+const INVITE_URL = 'https://discord.com/oauth2/authorize?client_id=1523811499766976723&permissions=1099511720981&scope=bot%20applications.commands';
+const COMMUNITY_URL = 'https://discord.gg/WuJMbkNZBJ';
+const GITHUB_URL = 'https://github.com/Devil-Novel/spamtrap';
+const DASHBOARD_URL = 'https://spamtrap.help';
+const TRAP_BADGE_URL = 'https://spamtrap.help/trap-badge.png';
 
 // Fixed, non-templated text - sent once per server via /spamtrap notify-reset
 // to the server owner, for servers whose trap channel got wiped by the
@@ -172,6 +183,72 @@ function buildStatsEmbed(guildId) {
       { name: 'Global (all servers)', value: `${db.global.totalCatches || 0} caught` },
       { name: 'Last 5 actions', value: recent }
     );
+}
+
+// ---------- Trap channel "Kicks" button info panel ----------
+// Shown ephemerally to whoever clicks the kick-counter button on the trap
+// channel message. Two messages (reply + followUp), same layout idea as
+// other moderation bots' "what is this / live stats" panels, but built from
+// data we can actually stand behind - no invented 7-day windows we don't
+// track, no per-channel breakdown we don't store.
+
+function buildTrapInfoPanel(guildId) {
+  const g = store.getGuild(guildId);
+  const embed = new EmbedBuilder()
+    .setTitle(`${E.protection} What is Spam Trap?`)
+    .setColor(0xf47521)
+    .setDescription(
+      "This channel is a **trap channel** - visible to members but not meant for normal use. " +
+        "Spam bots and compromised accounts often blast messages into every channel they can see, including this one.\n\n" +
+        `When a message lands here, Spam Trap deletes it immediately and takes action on the account (this server currently: **${actionText(g.action)}**), ` +
+        'DMs the user to explain why, and logs it - all in about a second.'
+    );
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setLabel('Invite Bot').setEmoji(E.protection).setStyle(ButtonStyle.Link).setURL(INVITE_URL),
+    new ButtonBuilder().setLabel('Dashboard').setEmoji(E.dashboard).setStyle(ButtonStyle.Link).setURL(DASHBOARD_URL),
+    new ButtonBuilder().setLabel('Community Hub').setEmoji(E.discord).setStyle(ButtonStyle.Link).setURL(COMMUNITY_URL),
+    new ButtonBuilder().setLabel('GitHub').setStyle(ButtonStyle.Link).setURL(GITHUB_URL)
+  );
+  return { embed, row };
+}
+
+// A few honest, mildly-fun footer lines, picked by how many catches this
+// server has racked up - same spirit as other bots' "that's a lot of spam"
+// flavor text, without pretending we track more than we do.
+function trapStatsFlavor(count) {
+  if (count === 0) return "No catches yet here - that's a good sign, or nobody's tried it yet.";
+  if (count < 10) return "Early days - every catch here is one less spam wave in your server.";
+  if (count < 100) return 'A solid haul so far. The trap is earning its keep.';
+  if (count < 1000) return "That's a lot of bots that picked the wrong channel.";
+  return 'A genuinely absurd number of spam bots have met their end in here.';
+}
+
+function buildTrapStatsPanel(guildId, client) {
+  const db = store.readDb();
+  const g = store.getGuild(guildId);
+  const globalServers = client.guilds.cache.size;
+
+  const mostRecent = (g.recentActions || [])[0];
+  const mostRecentLine = mostRecent
+    ? `<@${mostRecent.userId}> — ${mostRecent.action} — <t:${Math.floor(mostRecent.timestamp / 1000)}:R>`
+    : 'No catches yet';
+
+  const embed = new EmbedBuilder()
+    .setTitle(`${E.dashboard} Spam Trap Statistics`)
+    .setColor(0xf47521)
+    .setThumbnail(TRAP_BADGE_URL)
+    .addFields(
+      { name: 'This server', value: `${g.catchCount || 0} caught`, inline: true },
+      { name: 'Trap channel(s)', value: `${g.trapChannels.length || 0}`, inline: true },
+      { name: 'Action', value: actionText(g.action), inline: true },
+      { name: 'Most recent catch', value: mostRecentLine, inline: false },
+      { name: 'Global (all servers)', value: `${db.global.totalCatches || 0} caught across ${globalServers.toLocaleString()} servers`, inline: false }
+    )
+    .setFooter({ text: trapStatsFlavor(g.catchCount || 0) });
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setLabel('Open Dashboard').setEmoji(E.dashboard).setStyle(ButtonStyle.Link).setURL(DASHBOARD_URL)
+  );
+  return { embed, row };
 }
 
 // ---------- Core catch flow ----------
@@ -466,6 +543,18 @@ client.on('messageCreate', async (message) => {
 
 client.on('interactionCreate', async (interaction) => {
   try {
+    // The "Spam Trap Kicks: N" button on the trap channel message - public,
+    // any member can click it (it's just information, nothing destructive),
+    // so no hasPermission() admin gate here unlike the slash commands below.
+    if (interaction.isButton() && interaction.customId === 'spamtrap_kick_counter') {
+      if (!interaction.guild) return;
+      const { embed: infoEmbed, row: infoRow } = buildTrapInfoPanel(interaction.guild.id);
+      const { embed: statsEmbed, row: statsRow } = buildTrapStatsPanel(interaction.guild.id, interaction.client);
+      await interaction.reply({ embeds: [infoEmbed], components: [infoRow], flags: MessageFlags.Ephemeral });
+      await interaction.followUp({ embeds: [statsEmbed], components: [statsRow], flags: MessageFlags.Ephemeral });
+      return;
+    }
+
     if (interaction.isChatInputCommand()) {
       if (!interaction.guild) {
         return await interaction.reply({
