@@ -48,7 +48,6 @@ const BOT_OWNER_ID = process.env.BOT_OWNER_ID;
 // (site + here) so they can't quietly drift out of sync.
 const INVITE_URL = 'https://discord.com/oauth2/authorize?client_id=1523811499766976723&permissions=1099511720981&scope=bot%20applications.commands';
 const COMMUNITY_URL = 'https://discord.gg/WuJMbkNZBJ';
-const GITHUB_URL = 'https://github.com/Devil-Novel/spamtrap';
 const DASHBOARD_URL = 'https://spamtrap.help';
 const TRAP_BADGE_URL = 'https://spamtrap.help/trap-badge.png';
 
@@ -187,30 +186,10 @@ function buildStatsEmbed(guildId) {
 
 // ---------- Trap channel "Kicks" button info panel ----------
 // Shown ephemerally to whoever clicks the kick-counter button on the trap
-// channel message. Two messages (reply + followUp), same layout idea as
-// other moderation bots' "what is this / live stats" panels, but built from
-// data we can actually stand behind - no invented 7-day windows we don't
-// track, no per-channel breakdown we don't store.
-
-function buildTrapInfoPanel(guildId) {
-  const g = store.getGuild(guildId);
-  const embed = new EmbedBuilder()
-    .setTitle(`${E.protection} What is Spam Trap?`)
-    .setColor(0xf47521)
-    .setDescription(
-      "This channel is a **trap channel** - visible to members but not meant for normal use. " +
-        "Spam bots and compromised accounts often blast messages into every channel they can see, including this one.\n\n" +
-        `When a message lands here, Spam Trap deletes it immediately and takes action on the account (this server currently: **${actionText(g.action)}**), ` +
-        'DMs the user to explain why, and logs it - all in about a second.'
-    );
-  const row = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setLabel('Invite Bot').setEmoji(E.protection).setStyle(ButtonStyle.Link).setURL(INVITE_URL),
-    new ButtonBuilder().setLabel('Dashboard').setEmoji(E.dashboard).setStyle(ButtonStyle.Link).setURL(DASHBOARD_URL),
-    new ButtonBuilder().setLabel('Community Hub').setEmoji(E.discord).setStyle(ButtonStyle.Link).setURL(COMMUNITY_URL),
-    new ButtonBuilder().setLabel('GitHub').setStyle(ButtonStyle.Link).setURL(GITHUB_URL)
-  );
-  return { embed, row };
-}
+// channel message. One combined embed (what this channel is + this server's
+// and global stats) built from data we can actually stand behind - no
+// invented 7-day windows we don't track, no per-channel breakdown we don't
+// store.
 
 // A few honest, mildly-fun footer lines, picked by how many catches this
 // server has racked up - same spirit as other bots' "that's a lot of spam"
@@ -223,7 +202,7 @@ function trapStatsFlavor(count) {
   return 'A genuinely absurd number of spam bots have met their end in here.';
 }
 
-function buildTrapStatsPanel(guildId, client) {
+function buildTrapPanel(guildId, client) {
   const db = store.readDb();
   const g = store.getGuild(guildId);
   const globalServers = client.guilds.cache.size;
@@ -234,9 +213,15 @@ function buildTrapStatsPanel(guildId, client) {
     : 'No catches yet';
 
   const embed = new EmbedBuilder()
-    .setTitle(`${E.dashboard} Spam Trap Statistics`)
+    .setTitle(`${E.protection} What is Spam Trap?`)
     .setColor(0xf47521)
     .setThumbnail(TRAP_BADGE_URL)
+    .setDescription(
+      "This channel is a **trap channel** - visible to members but not meant for normal use. " +
+        "Spam bots and compromised accounts often blast messages into every channel they can see, including this one.\n\n" +
+        `When a message lands here, Spam Trap deletes it immediately and takes action on the account (this server currently: **${actionText(g.action)}**), ` +
+        'DMs the user to explain why, and logs it - all in about a second.'
+    )
     .addFields(
       { name: 'This server', value: `${g.catchCount || 0} caught`, inline: true },
       { name: 'Trap channel(s)', value: `${g.trapChannels.length || 0}`, inline: true },
@@ -246,7 +231,9 @@ function buildTrapStatsPanel(guildId, client) {
     )
     .setFooter({ text: trapStatsFlavor(g.catchCount || 0) });
   const row = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setLabel('Open Dashboard').setEmoji(E.dashboard).setStyle(ButtonStyle.Link).setURL(DASHBOARD_URL)
+    new ButtonBuilder().setLabel('Invite Bot').setEmoji(E.protection).setStyle(ButtonStyle.Link).setURL(INVITE_URL),
+    new ButtonBuilder().setLabel('Dashboard').setEmoji(E.dashboard).setStyle(ButtonStyle.Link).setURL(DASHBOARD_URL),
+    new ButtonBuilder().setLabel('Community Hub').setEmoji(E.discord).setStyle(ButtonStyle.Link).setURL(COMMUNITY_URL)
   );
   return { embed, row };
 }
@@ -548,10 +535,8 @@ client.on('interactionCreate', async (interaction) => {
     // so no hasPermission() admin gate here unlike the slash commands below.
     if (interaction.isButton() && interaction.customId === 'spamtrap_kick_counter') {
       if (!interaction.guild) return;
-      const { embed: infoEmbed, row: infoRow } = buildTrapInfoPanel(interaction.guild.id);
-      const { embed: statsEmbed, row: statsRow } = buildTrapStatsPanel(interaction.guild.id, interaction.client);
-      await interaction.reply({ embeds: [infoEmbed], components: [infoRow], flags: MessageFlags.Ephemeral });
-      await interaction.followUp({ embeds: [statsEmbed], components: [statsRow], flags: MessageFlags.Ephemeral });
+      const { embed, row } = buildTrapPanel(interaction.guild.id, interaction.client);
+      await interaction.reply({ embeds: [embed], components: [row], flags: MessageFlags.Ephemeral });
       return;
     }
 
