@@ -624,8 +624,11 @@ client.on('interactionCreate', async (interaction) => {
           // Clean up any leftover bot messages from a previous setup (e.g. a
           // server that configured its trap channel before the warning and
           // counter were merged into one message) so we don't end up with an
-          // old message sitting next to the new one.
-          await purgeOldBotMessages(channel);
+          // old message sitting next to the new one. Exclude our own deferred
+          // reply in case this command was run from inside that channel -
+          // otherwise we'd delete the message editReply() is about to update.
+          const deferredReply = await interaction.fetchReply().catch(() => null);
+          await purgeOldBotMessages(channel, deferredReply?.id);
           const result = await postWarning(channel, guildId, g);
           if (!result.ok) {
             return await interaction.editReply({
@@ -674,9 +677,12 @@ client.on('interactionCreate', async (interaction) => {
             fresh.trapChannels = newIds;
             fresh.autoTrapChannelId = autoTrapChannelId;
           });
+          // Exclude our own deferred reply in case this command was run from
+          // inside one of these channels - same reasoning as /spamtrap channel.
+          const deferredReply = await interaction.fetchReply().catch(() => null);
           const failed = [];
           for (const c of channels) {
-            await purgeOldBotMessages(c);
+            await purgeOldBotMessages(c, deferredReply?.id);
             const result = await postWarning(c, guildId, g);
             if (!result.ok) {
               failed.push(c);
