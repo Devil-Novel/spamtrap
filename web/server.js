@@ -454,10 +454,20 @@ function startDashboard(client) {
 
   // ── Start ──
   const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     console.log(`[DASHBOARD] Running at ${BASE_URL}`);
     console.log(`[DASHBOARD] OAuth client_id: ${CLIENT_ID}`);
     console.log(`[DASHBOARD] Redirect URI: ${REDIRECT_URI}`);
+  });
+
+  // Any publicly exposed port gets occasional malformed/non-HTTP traffic
+  // (scanners, stray TCP probes, proxy health-check quirks) - Node already
+  // rejects it and destroys the socket safely on its own, but without a
+  // 'clientError' listener it also logs a scary-looking raw stack trace for
+  // every occurrence. Handle it quietly instead: still reject the request,
+  // just without the alarming log noise for something that isn't a bug.
+  server.on('clientError', (err, socket) => {
+    if (socket.writable) socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
   });
 }
 
