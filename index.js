@@ -52,14 +52,11 @@ const COMMUNITY_URL = 'https://discord.gg/WuJMbkNZBJ';
 const DASHBOARD_URL = 'https://spamtrap.help';
 const TRAP_BADGE_URL = 'https://spamtrap.help/trap-badge.png';
 
-// Fixed, non-templated text - sent once per server via /spamtrap notify-reset
-// to the server owner, for servers whose trap channel got wiped by the
-// Railway ephemeral-storage bug (see README "Persistent Storage").
+// Fixed, non-templated text - sent via /spamtrap notify-reset to the owners
+// of servers that haven't set a trap channel yet, as a plain setup reminder.
 const RESET_NOTICE_DM =
-  `${E.protection} Good news about Spam Trap! We fixed a hosting issue that was resetting server settings, and it will not happen again. ` +
-  "If your trap channel or log channel isn't set yet, just run /spamtrap channel one more time, it'll stick for good from now on.\n\n" +
-  `${E.dashboard} We also made the dashboard much easier to use, you can now set your trap channel(s) and log channel right from spamtrap.help, no commands needed.\n\n` +
-  `${E.done} Thanks for using Spam Trap and for your patience while we got this sorted!`;
+  `${E.protection} Reminder: Spam Trap isn't fully configured on your server yet. Run /spamtrap channel to set your trap channel, and /spamtrap log if you'd also like a log channel for catch reports.\n\n` +
+  `${E.done} Takes under a minute, thanks for using Spam Trap!`;
 
 const client = new Client({
   intents: [
