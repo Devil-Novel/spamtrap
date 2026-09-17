@@ -48,7 +48,7 @@ const BOT_OWNER_ID = process.env.BOT_OWNER_ID;
 // bitmask, Discord invite, GitHub repo, and site URL in multiple places
 // (site + here) so they can't quietly drift out of sync.
 const INVITE_URL = 'https://discord.com/oauth2/authorize?client_id=1523811499766976723&permissions=1099511720981&scope=bot%20applications.commands';
-const COMMUNITY_URL = 'https://discord.gg/WuJMbkNZBJ';
+const COMMUNITY_URL = 'https://discord.gg/93PyfsBqqq';
 const DASHBOARD_URL = 'https://spamtrap.help';
 const TRAP_BADGE_URL = 'https://spamtrap.help/trap-badge.png';
 

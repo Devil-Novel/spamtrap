@@ -401,6 +401,71 @@ function startDashboard(client) {
     res.json({ success: true, trapChannels: validIds, failed });
   });
 
+  // ── API: create a brand-new trap channel ──
+  // Same channel the bot makes for itself on join, but on demand from the
+  // dashboard - for servers that deleted theirs, or that would rather not
+  // create one by hand in Discord first.
+  app.post('/api/guild/:id/create-channel', async (req, res) => {
+    const guild = await requireGuildAccess(req, res, req.params.id);
+    if (!guild) return;
+    const guildId = req.params.id;
+    let g = store.getGuild(guildId);
+
+    const me = guild.members.me;
+    if (!me || !me.permissions.has(PermissionsBitField.Flags.ManageChannels)) {
+      return res.status(400).json({ error: "I don't have the Manage Channels permission on this server" });
+    }
+
+    // Discord caps channel names at 100 characters. Falls back to the exact
+    // name the bot uses on join when nothing usable is supplied.
+    const raw = typeof req.body.name === 'string' ? req.body.name.trim() : '';
+    const name = (raw || '\u{1FAA4}│spam-trap').slice(0, 100);
+
+    // Same ceiling as setting an existing channel: five maximum, and only
+    // more than one at all when Many Traps is enabled.
+    const existing = g.trapChannels || [];
+    if (g.experiments.manyTraps && existing.length >= 5) {
+      return res.status(400).json({ error: 'A maximum of 5 trap channels is supported' });
+    }
+
+    let channel;
+    try {
+      channel = await guild.channels.create({
+        name,
+        type: ChannelType.GuildText,
+        position: 0,
+        reason: 'Spam Trap: trap channel created from the dashboard',
+      });
+    } catch (err) {
+      return res.status(500).json({ error: `Couldn't create the channel: ${err.message}` });
+    }
+
+    // With Many Traps on the new channel is added to the list; without it, it
+    // replaces whatever was set, matching /spamtrap channel's behaviour.
+    const nextIds = g.experiments.manyTraps ? [...existing, channel.id] : [channel.id];
+    await maybeDeleteOldAutoChannel(guild, g, nextIds);
+    g = store.updateGuild(guildId, (fresh) => {
+      fresh.trapChannels = nextIds;
+      // Tracked as bot-created so the Delete Old Trap experiment can clean it
+      // up later, exactly like the channel made on join.
+      fresh.autoTrapChannelId = channel.id;
+    });
+
+    // Brand-new channel, so there's nothing to purge - straight to posting.
+    const result = await postWarning(channel, guildId, g);
+    if (result.ok) {
+      await postOrUpdateKickCounter(channel, guildId, g, g.catchCount || 0);
+    }
+
+    console.log(`[DASHBOARD] Created trap channel #${channel.name} in ${guild.name}`);
+    res.json({
+      success: true,
+      channel: { id: channel.id, name: channel.name },
+      trapChannels: nextIds,
+      warningPosted: !!result.ok,
+    });
+  });
+
   // ── API: set or clear the log channel ──
   app.post('/api/guild/:id/log', async (req, res) => {
     const guild = await requireGuildAccess(req, res, req.params.id);
