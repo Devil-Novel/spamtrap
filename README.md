@@ -232,9 +232,12 @@ https://discord.com/oauth2/authorize?client_id=1523811499766976723&permissions=1
 
 - Guilds
 - Guild Messages
-- Message Content
-- Guild Members
+- Message Content (**privileged** - must be toggled on under Bot → Privileged Gateway Intents in the Developer Portal)
 - Guild Moderation
+
+The bot deliberately does **not** request the Server Members or Presence intents. It never needed them (every member it touches comes from a message/interaction payload or a one-off REST call), and each privileged intent is one more thing that needs Discord's approval and annual re-review once the bot is large - and one more toggle that, if off, makes Discord refuse the login entirely.
+
+If a privileged intent is turned off, the bot exits on startup with a `[FATAL]` message naming the exact toggle to flip. It exits on purpose: the alternative is a process that stays "Active" on Railway while being completely offline.
 
 ### User Permissions
 

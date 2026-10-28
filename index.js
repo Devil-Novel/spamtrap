@@ -58,16 +58,67 @@ const RESET_NOTICE_DM =
   `${E.protection} Reminder: Spam Trap isn't fully configured on your server yet. Run /spamtrap channel to set your trap channel, and /spamtrap log if you'd also like a log channel for catch reports.\n\n` +
   `${E.done} Takes under a minute, thanks for using Spam Trap!`;
 
+// Deliberately NOT requesting GuildMembers (the "Server Members Intent"). It
+// is privileged - once the bot is large enough it needs Discord's approval and
+// an annual re-review, and if its toggle is ever off the login is refused
+// outright ("Used disallowed intents") and the whole bot goes offline. And it
+// was never actually needed: everything this bot does with members comes from
+// payloads that include them anyway (message.member on MESSAGE_CREATE,
+// interaction.member, the bot's own member in GUILD_CREATE) or from one-off
+// REST calls (ban/unban, fetching a single member or the owner by id). Only
+// member join/leave events and full member-list fetches need the intent, and
+// the bot uses neither. MessageContent is the one privileged intent it keeps.
+const INTENTS = [
+  GatewayIntentBits.Guilds,
+  GatewayIntentBits.GuildMessages,
+  GatewayIntentBits.MessageContent,
+  GatewayIntentBits.GuildModeration,
+];
+
+// Human names of the privileged intents, so a refused login can say exactly
+// which Developer Portal toggle to flip rather than a bare "disallowed intents".
+const PRIVILEGED_INTENT_NAMES = {
+  [GatewayIntentBits.GuildMembers]: 'Server Members Intent',
+  [GatewayIntentBits.MessageContent]: 'Message Content Intent',
+  [GatewayIntentBits.GuildPresences]: 'Presence Intent',
+};
+const REQUIRED_PRIVILEGED_INTENTS = INTENTS.filter((i) => PRIVILEGED_INTENT_NAMES[i]).map((i) => PRIVILEGED_INTENT_NAMES[i]);
+
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildModeration,
-  ],
+  intents: INTENTS,
   partials: [Partials.Channel],
 });
+
+// The two login failures that can never fix themselves: Discord refusing a
+// privileged intent that's toggled off, or a wrong/reset token. For these,
+// staying alive is the worst outcome - the safety nets below would swallow
+// the error, the process would sit there connected to nothing, and Railway
+// would keep showing the deploy as "Active" while the bot is actually
+// offline (exactly how the intents outage went unnoticed). Instead: print a
+// plain-English fix, then exit non-zero so Railway marks the deploy failed.
+// railway.json caps restarts at 10 (ON_FAILURE), so this can't spin into a
+// runaway reconnect loop against Discord's identify limits.
+function handleFatalStartupError(err) {
+  const msg = String((err && err.message) || err);
+  const code = err && err.code;
+  let lines = null;
+  if (/disallowed intents/i.test(msg) || code === 'DisallowedIntents') {
+    lines = [
+      'Discord refused the login because a Privileged Gateway Intent this bot needs is turned OFF.',
+      `This bot needs: ${REQUIRED_PRIVILEGED_INTENTS.join(', ') || '(none)'}.`,
+      'Fix: discord.com/developers -> your app -> Bot -> Privileged Gateway Intents -> turn it on -> Save Changes -> redeploy.',
+    ];
+  } else if (/invalid token/i.test(msg) || code === 'TokenInvalid') {
+    lines = [
+      'Discord refused the login because the bot token is wrong, missing, or was reset.',
+      'Fix: discord.com/developers -> your app -> Bot -> Reset Token, then put the new value in Railway -> Variables -> BOT_TOKEN and redeploy.',
+    ];
+  }
+  if (!lines) return false;
+  console.error(`\n[FATAL] ${lines.join('\n[FATAL] ')}\n[FATAL] Exiting so this deploy shows as failed instead of "Active" while the bot is offline.\n`);
+  process.exit(1);
+  return true;
+}
 
 // Defense in depth: without these, an error/rejection that slips past every
 // local try/catch (a new one we haven't thought of, a library edge case,
@@ -78,6 +129,7 @@ client.on('error', (err) => {
   console.error('[CLIENT ERROR]', err);
 });
 process.on('unhandledRejection', (err) => {
+  if (handleFatalStartupError(err)) return;
   console.error('[UNHANDLED REJECTION]', err);
 });
 process.on('uncaughtException', (err) => {
@@ -1003,4 +1055,13 @@ client.on('guildDelete', (guild) => {
   }
 });
 
-client.login(process.env.BOT_TOKEN || process.env.DISCORD_TOKEN);
+// A rejected login means the client never connected, and discord.js won't
+// retry a failed login on its own - so an uncaught rejection here would leave
+// the process alive but permanently offline. Fatal config errors get the
+// plain-English treatment above; anything else (e.g. a transient network
+// failure) exits too, so Railway's restart policy retries it.
+client.login(process.env.BOT_TOKEN || process.env.DISCORD_TOKEN).catch((err) => {
+  if (handleFatalStartupError(err)) return;
+  console.error('[LOGIN FAILED]', err);
+  process.exit(1);
+});
