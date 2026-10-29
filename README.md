@@ -1,4 +1,6 @@
-# Spam Trap
+# Spam Trap 4.0.1
+
+**Replacing an existing install? Read [UPGRADE.md](UPGRADE.md) before deploying.**
 
 The Discord bot that stops spammers before they spread.
 
@@ -6,15 +8,15 @@ Spam Trap is a free, open-source Discord moderation bot that automatically catch
 
 **Website:** [spamtrap.help](https://spamtrap.help)
 **Invite:** [Add to your server](https://discord.com/oauth2/authorize?client_id=1523811499766976723&permissions=1099511720981&scope=bot%20applications.commands)
-**Support:** [Discord Server](https://discord.gg/WuJMbkNZBJ)
+**Support:** [Discord Server](https://discord.gg/93PyfsBqqq)
 
 ---
 
 ## How It Works
 
-1. **Bot joins and creates a trap.** When invited, Spam Trap auto-creates a `spam-trap` channel at the top of your server with a multilingual warning message in 8 languages.
+1. **Bot joins and creates a trap.** When invited, Spam Trap auto-creates a `spam-trap` channel at the top of your server with a warning message with translations in 11 languages.
 
-2. **Spam is detected.** Spam bots blast every visible channel. When one posts in the trap channel, the bot catches it instantly. Server owners, administrators, and users with allowed roles are always safe.
+2. **Spam is detected.** Spam bots blast every visible channel. When one posts in the trap channel, the bot catches it instantly. Server owners and administrators are exempt from the trap. Allowed roles govern management access; they are not trap exemptions.
 
 3. **The user gets a DM.** The bot sends a message explaining the account may be compromised, with recovery steps: change password, enable 2FA, remove suspicious authorized apps.
 
@@ -288,7 +290,7 @@ For `delete`/`timeout` actions and anti-nuke the bot additionally needs Manage M
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 22+
 - A Discord bot token
 - A GitHub repository
 
@@ -300,7 +302,7 @@ For `delete`/`timeout` actions and anti-nuke the bot additionally needs Manage M
 | `CLIENT_ID` | Yes (for dashboard) | Application client ID |
 | `CLIENT_SECRET` | Yes (for dashboard) | OAuth2 client secret |
 | `BASE_URL` | Yes (for dashboard) | Your Railway URL |
-| `SESSION_SECRET` | Recommended | Express session secret |
+| `SESSION_SECRET` | Production required | Random secret of at least 32 characters |
 | `DATABASE_PATH` | **Yes** | Path to the JSON database file. Must point inside a mounted persistent Volume (e.g. `/data/db.json`) - see "Persistent Storage" below. |
 | `BOT_OWNER_ID` | No | Your Discord user id. Enables `/spamtrap servers` (owner-only cross-server list). Leave unset to disable that command. |
 | `GUILD_ID` | No | For testing: register commands to one server only |

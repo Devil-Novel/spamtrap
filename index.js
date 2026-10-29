@@ -19,6 +19,11 @@ const {
 require('dotenv').config();
 
 const store = require('./lib/store');
+const { canManageTrap } = require('./lib/access');
+const { validateMessages, MESSAGE_LIMIT } = require('./web/validation');
+const { createSoftbanRecovery } = require('./lib/softban');
+const { validateDashboardEnvironment } = require('./web/server');
+validateDashboardEnvironment();
 const { replaceVars, DEFAULT_WARNING, TRANSLATIONS_TEXT, DEFAULT_DM, DEFAULT_LOG } = require('./lib/messages');
 const {
   maybeDeleteOldAutoChannel,
@@ -95,6 +100,7 @@ const REQUIRED_PRIVILEGED_INTENTS = INTENTS.filter((i) => PRIVILEGED_INTENT_NAME
 const client = new Client({
   intents: INTENTS,
   partials: [Partials.Channel],
+  allowedMentions: { parse: [] },
 });
 
 // Server protection (scam links, raids, mentions, repeats, newcomers,
@@ -102,6 +108,7 @@ const client = new Client({
 // and it is wired to run only for non-trap channels - see messageCreate.
 const { createProtection } = require('./lib/protection');
 const protection = createProtection({ client, memberEvents: ENABLE_MEMBER_EVENTS });
+const softbanRecovery = createSoftbanRecovery(client);
 
 // The two login failures that can never fix themselves: Discord refusing a
 // privileged intent that's toggled off, or a wrong/reset token. For these,
@@ -148,6 +155,7 @@ process.on('unhandledRejection', (err) => {
 });
 process.on('uncaughtException', (err) => {
   console.error('[UNCAUGHT EXCEPTION]', err);
+  process.exit(1); // Restart after an unknown fatal error rather than serving unhealthy state.
 });
 
 const RANDOM_WORDS = ['general', 'chat', 'lounge', 'memes', 'gaming', 'talk', 'hangout', 'random'];
@@ -159,21 +167,7 @@ function randomChaosName() {
 }
 
 function hasPermission(interaction) {
-  // Server owner always has permission
-  if (interaction.guild.ownerId === interaction.user.id) return true;
-
-  // Check allowed roles first (if configured)
-  const g = store.getGuild(interaction.guild.id);
-  const allowedRoles = g.allowedRoles || [];
-  if (allowedRoles.length > 0) {
-    return interaction.member.roles.cache.some((r) => allowedRoles.includes(r.id));
-  }
-
-  // Fallback: BanMembers + ManageGuild
-  return (
-    interaction.memberPermissions?.has(PermissionsBitField.Flags.BanMembers) &&
-    interaction.memberPermissions?.has(PermissionsBitField.Flags.ManageGuild)
-  );
+  return canManageTrap(interaction.guild, interaction.member, store.getGuild(interaction.guild.id), interaction.memberPermissions);
 }
 
 function actionText(action) {
@@ -304,143 +298,8 @@ function buildTrapPanel(guildId, client) {
 
 // ---------- Core catch flow ----------
 
-async function handleCatch(message, guildConfig) {
-  const guildId = message.guild.id;
-  const member = message.member;
-
-  // 1) Filter: ignore admins and the owner (log a warning)
-  const isOwner = message.guild.ownerId === member.id;
-  const isAdmin = member.permissions.has(PermissionsBitField.Flags.Administrator);
-  if (isOwner || isAdmin) {
-    await logToChannel(
-      message.guild,
-      guildConfig,
-      `${E.safety} ${isOwner ? 'Server owner' : 'An admin'} <@${member.id}> wrote in the trap channel and was skipped.`
-    );
-    return;
-  }
-
-  // 2) Make sure the bot is able to ban this member
-  if (!member.bannable) {
-    await logToChannel(
-      message.guild,
-      guildConfig,
-      `${E.protection} Could not action <@${member.id}> — bot's role is not high enough.`
-    );
-    return;
-  }
-
-  const serverName = message.guild.name;
-  const trapChannelMention = `<#${message.channel.id}>`;
-  const trapChannelLink = `https://discord.com/channels/${guildId}/${message.channel.id}`;
-  const act = guildConfig.action; // softban | ban | disabled
-  const actText = actionText(act);
-
-  const caughtUserId = member.id;
-
-  // 3) Delete the message immediately. Nothing below is allowed to delay this.
-  if (message.deletable) {
-    await message.delete().catch(() => {});
-  }
-
-  if (act === 'disabled') {
-    await logToChannel(message.guild, guildConfig, `${E.time} Message from <@${member.id}> caught but action is disabled (log only).`);
-    return;
-  }
-
-  // 4) Timeout First (optional)
-  if (guildConfig.experiments.timeoutFirst) {
-    await member.timeout(60 * 60 * 1000, 'Spam Trap: pre-ban timeout').catch(() => {});
-  }
-
-  // 5) Ban immediately (also purges their messages). This is the priority
-  // action, it used to run after the DM send below, which meant a slow or
-  // rate-limited Discord DM delivery delayed the actual ban.
-  const purgeSeconds = guildConfig.experiments.onlyRecentDelete ? 15 * 60 : 60 * 60;
-  try {
-    await message.guild.members.ban(caughtUserId, {
-      deleteMessageSeconds: purgeSeconds,
-      reason: 'Spam Trap: wrote in trap channel',
-    });
-  } catch (err) {
-    await logToChannel(message.guild, guildConfig, `${E.protection} Failed to ban <@${caughtUserId}>: ${err.message}`);
-    return;
-  }
-
-  // 6) If action is softban, unban immediately
-  if (act === 'softban') {
-    await message.guild.members.unban(caughtUserId, 'Spam Trap: softban - allow rejoin').catch(() => {});
-  }
-
-  // 7) Send the DM now that the user is already actioned. A slow DM delivery
-  // or invite creation can no longer delay the ban above. The rejoin link is
-  // always included (not gated behind an experiment) - if invite creation
-  // fails for any reason, we fall back to a generic rejoin line instead of
-  // leaving a broken/blank link in the message.
-  if (!guildConfig.experiments.noDm) {
-    let dmText = guildConfig.customMessages.dm || DEFAULT_DM;
-    let rejoinLine = "Once your account is secure, you're welcome to rejoin the server.";
-    try {
-      const invite = await message.channel.createInvite({ maxAge: 7 * 24 * 60 * 60, maxUses: 1, unique: true });
-      rejoinLine = `Once your account is secure, you're welcome to rejoin using this link: ${invite.url}`;
-    } catch (_) {}
-    dmText = replaceVars(dmText, { actionText: actText, serverName, trapChannelLink, trapChannelMention });
-    try {
-      await member.send(`${dmText}\n\n${rejoinLine}`);
-    } catch (_) {
-      // user has DMs closed - ignore
-    }
-  }
-
-  // 8) Log
-  const { guildCount, globalCount } = store.incrementCatch(guildId);
-  store.pushRecentAction(guildId, { userId: caughtUserId, action: actText, timestamp: Date.now() });
-
-  // Keep every trap channel's public counter in sync, not just the one that
-  // caught this particular message - otherwise counters drift apart under
-  // the Many Traps experiment.
-  for (const trapChannelId of guildConfig.trapChannels) {
-    const trapChannel =
-      trapChannelId === message.channel.id
-        ? message.channel
-        : await message.guild.channels.fetch(trapChannelId).catch(() => null);
-    if (trapChannel) await postOrUpdateKickCounter(trapChannel, guildId, guildConfig, guildCount);
-  }
-
-  let logText = guildConfig.customMessages.log || DEFAULT_LOG;
-  logText = replaceVars(logText, { actionText: actText, serverName, trapChannelLink, trapChannelMention });
-
-  const logEmbed = new EmbedBuilder()
-    .setTitle(`Spam Trap catch ${E.protection}`)
-    .setColor(0xe83535)
-    .setDescription(logText)
-    .addFields(
-      { name: 'User', value: `<@${caughtUserId}> (${caughtUserId})`, inline: true },
-      { name: 'Channel', value: trapChannelMention, inline: true },
-      { name: 'Result', value: actText, inline: true },
-      { name: 'Catch count', value: `Server: \`${guildCount}\` | Global: \`${globalCount}\`` }
-    )
-    .setTimestamp();
-
-  if (guildConfig.experiments.forwardMessage && message.content) {
-    logEmbed.addFields({ name: 'Message content', value: message.content.slice(0, 1000) });
-  }
-
-  await logToChannel(message.guild, guildConfig, null, logEmbed);
-
-  // 9) Ensure Deletion - sweep after 2 minutes
-  if (guildConfig.experiments.ensureDeletion) {
-    setTimeout(async () => {
-      try {
-        const channel = await message.guild.channels.fetch(message.channel.id).catch(() => null);
-        if (!channel) return;
-        const messages = await channel.messages.fetch({ limit: 100 });
-        const leftover = messages.filter((m) => m.author.id === caughtUserId);
-        if (leftover.size) await channel.bulkDelete(leftover, true).catch(() => {});
-      } catch (_) {}
-    }, 2 * 60 * 1000);
-  }
-}
+const { createCatchHandler } = require('./lib/catch');
+const handleCatch = createCatchHandler({ softbanRecovery, logToChannel });
 
 // Flattens an embed into plain text for servers without Embed Links, so the
 // log entry still gets posted instead of silently vanishing.
@@ -550,7 +409,9 @@ client.once('clientReady', async () => {
     .filter((id) => store.getGuild(id).trapChannels.length > 0).length;
   console.log(`[STORAGE] Loaded ${store.getAllGuildIds().length} known guild(s), ${configuredCount} with a trap channel configured.`);
 
-  // Start the web dashboard
+  softbanRecovery.start();
+  // Start the dashboard; registration readiness is tracked by its health check.
+  client.commandsReady = false;
   startDashboard(client);
 
   // Register slash commands
@@ -565,6 +426,7 @@ client.once('clientReady', async () => {
       await rest.put(Routes.applicationCommands(clientId), { body: commands });
       console.log('Commands registered globally (may take up to 1 hour to appear)');
     }
+    client.commandsReady = true;
   } catch (err) {
     console.error('Failed to register commands:', err.message);
   }
@@ -574,6 +436,7 @@ client.once('clientReady', async () => {
 
 // ---------- messageCreate ----------
 
+const activeCatches = new Set();
 client.on('messageCreate', async (message) => {
   // 1) Trap channel - the original behaviour, untouched. Runs first and on
   //    its own try/catch so nothing in the protections below can affect it.
@@ -586,7 +449,10 @@ client.on('messageCreate', async (message) => {
     if (message.author && !message.author.bot && message.guild && message.member) {
       const g = store.getGuild(message.guild.id);
       if (g.trapChannels.includes(message.channel.id)) {
-        await handleCatch(message, g);
+        const key = message.guild.id + ':' + message.author.id;
+        if (activeCatches.has(key)) { if (message.deletable) await message.delete().catch(() => {}); return; }
+        activeCatches.add(key);
+        try { await handleCatch(message, g); } finally { activeCatches.delete(key); }
         return; // trap channels are never also subject to the protections
       }
     }
@@ -693,19 +559,22 @@ client.on('interactionCreate', async (interaction) => {
           .setLabel('Warning message (posted in trap channel)')
           .setStyle(TextInputStyle.Paragraph)
           .setRequired(false)
-          .setValue(g.customMessages.warning || '');
+          .setMaxLength(MESSAGE_LIMIT)
+          .setValue((g.customMessages.warning || '').slice(0, MESSAGE_LIMIT));
         const dmInput = new TextInputBuilder()
           .setCustomId('dm')
           .setLabel('DM message')
           .setStyle(TextInputStyle.Paragraph)
           .setRequired(false)
-          .setValue(g.customMessages.dm || '');
+          .setMaxLength(MESSAGE_LIMIT)
+          .setValue((g.customMessages.dm || '').slice(0, MESSAGE_LIMIT));
         const logInput = new TextInputBuilder()
           .setCustomId('log')
           .setLabel('Log message')
           .setStyle(TextInputStyle.Paragraph)
           .setRequired(false)
-          .setValue(g.customMessages.log || '');
+          .setMaxLength(MESSAGE_LIMIT)
+          .setValue((g.customMessages.log || '').slice(0, MESSAGE_LIMIT));
 
         modal.addComponents(
           new ActionRowBuilder().addComponents(warningInput),
@@ -1036,12 +905,15 @@ client.on('interactionCreate', async (interaction) => {
     }
 
     if (interaction.isModalSubmit() && interaction.customId === 'spamtrap-messages-modal') {
+      if (!hasPermission(interaction)) return interaction.reply({ content: 'You no longer have permission to edit these messages.', flags: MessageFlags.Ephemeral });
       const guildId = interaction.guild.id;
       const g = store.getGuild(guildId);
       const warning = interaction.fields.getTextInputValue('warning');
       const dm = interaction.fields.getTextInputValue('dm');
       const log = interaction.fields.getTextInputValue('log');
 
+      const validationError = validateMessages({ warning, dm, log });
+      if (validationError) return interaction.reply({ content: validationError, flags: MessageFlags.Ephemeral });
       g.customMessages.warning = warning || null;
       g.customMessages.dm = dm || null;
       g.customMessages.log = log || null;

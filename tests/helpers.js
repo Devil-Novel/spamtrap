@@ -11,9 +11,10 @@ const P = PermissionsBitField.Flags;
 
 // Must be called BEFORE requiring lib/store (it reads DATABASE_PATH on load).
 function useTempDb(tag) {
-  const file = path.join(os.tmpdir(), `spamtrap-test-${tag}-${process.pid}-${Date.now()}.json`);
+  const dir = fs.mkdtempSync(path.join(process.cwd(), `.test-${tag}-`));
+  const file = path.join(dir, 'db.json');
   process.env.DATABASE_PATH = file;
-  return () => { try { fs.unlinkSync(file); } catch (_) {} };
+  return () => { for (const suffix of ['', '.bak']) { try { fs.unlinkSync(file + suffix); } catch (_) {} } try { fs.rmdirSync(dir); } catch (_) {} };
 }
 
 // Injectable clock

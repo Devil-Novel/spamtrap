@@ -3,7 +3,10 @@ npm-debug.log
 .env
 .env.*
 !.env.example
-data/db.json
+data/
+*.json.bak
+*.tmp
+.test-*/
 .git
 .gitignore
 README.md

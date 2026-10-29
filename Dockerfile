@@ -1,7 +1,7 @@
-FROM node:20-slim
+FROM node:22-slim
 WORKDIR /app
-COPY package.json ./
-RUN npm install --omit=dev
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --ignore-scripts
 COPY . .
 RUN mkdir -p /data
 ENV DATABASE_PATH=/data/db.json

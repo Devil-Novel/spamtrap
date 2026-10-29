@@ -24,5 +24,6 @@ const rest = new REST({ version: '10' }).setToken(BOT_TOKEN);
     }
   } catch (err) {
     console.error('❌ Failed to register commands:', err);
+    process.exitCode = 1;
   }
 })();

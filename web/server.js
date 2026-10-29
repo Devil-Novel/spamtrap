@@ -1,19 +1,65 @@
 const express = require('express');
 const compression = require('compression');
-const session = require('cookie-session');
+const { serverSessions } = require('./sessions');
+const { canManageTrap } = require('../lib/access');
+const { validateMessages, usableChannel } = require('./validation');
 const path = require('path');
 const crypto = require('crypto');
+const fs = require('fs');
 const { PermissionsBitField, ChannelType } = require('discord.js');
 const store = require('../lib/store');
 const { maybeDeleteOldAutoChannel, purgeOldBotMessages, postWarning, postOrUpdateKickCounter } = require('../lib/trapChannel');
 
-function startDashboard(client) {
+function validateDashboardEnvironment() {
+  if (process.env.NODE_ENV === 'production') {
+    if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32 || /^(replace_with|any_random|your_)/.test(process.env.SESSION_SECRET)) {
+      throw new Error('Set SESSION_SECRET to a random secret of at least 32 characters before deploying');
+    }
+    if (!process.env.CLIENT_SECRET) throw new Error('CLIENT_SECRET is required for dashboard login');
+    const url = new URL(process.env.BASE_URL || '');
+    if (url.protocol !== 'https:' || url.pathname !== '/' || url.search || url.hash || url.username || url.password) throw new Error('BASE_URL must be the HTTPS origin of your website');
+  }
+}
+
+async function discordFetch(url, options = {}) {
+  const response = await fetch(url, { ...options, signal: AbortSignal.timeout(15000) });
+  if (!response.ok) throw Object.assign(new Error('Discord request failed (' + response.status + ')'), { status: response.status === 401 ? 401 : 502 });
+  return response;
+}
+
+function createDashboard(client) {
+  validateDashboardEnvironment();
   const CLIENT_ID = process.env.CLIENT_ID || client.user.id;
   const CLIENT_SECRET = process.env.CLIENT_SECRET;
-  const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
+  const BASE_URL = (process.env.BASE_URL || 'http://localhost:3000').replace(/\/$/, '');
   const REDIRECT_URI = `${BASE_URL}/auth/callback`;
 
   const app = express();
+  app.disable('x-powered-by');
+  const inlineHashes = [...fs.readFileSync(path.join(__dirname, 'public/index.html'), 'utf8').matchAll(/<script(?:\s+type="application\/ld\+json")?>([\s\S]*?)<\/script>/g)]
+    .map(match => "'sha256-" + crypto.createHash('sha256').update(match[1]).digest('base64') + "'");
+  const csp = [
+    "default-src 'self'", "base-uri 'none'", "object-src 'none'", "frame-ancestors 'none'", "form-action 'self'",
+    "script-src 'self' https://www.googletagmanager.com " + inlineHashes.join(' '),
+    "script-src-attr 'unsafe-inline'", // Existing accessible controls use inline event attributes.
+    "style-src 'self' 'unsafe-inline'", "img-src 'self' data: https://cdn.discordapp.com https://*.google-analytics.com https://www.googletagmanager.com",
+    "connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com",
+  ].join('; ');
+  app.use((req, res, next) => { res.setHeader('Content-Security-Policy', csp); next(); });
+  const queues = new Map();
+  const wrap = handler => async (req, res, next) => {
+    // Serialize each guild's dashboard mutations across Discord API awaits.
+    const key = req.method === 'POST' ? req.params.id : null;
+    const previous = key ? queues.get(key) : null;
+    let unlock;
+    const held = key ? new Promise(resolve => { unlock = resolve; }) : null;
+    if (key) queues.set(key, held);
+    try { if (previous) await previous; await handler(req, res, next); }
+    catch (err) { next(err); }
+    finally { if (unlock) unlock(); if (key && queues.get(key) === held) queues.delete(key); }
+  };
+  const get = (url, handler) => app.get(url, wrap(handler));
+  const post = (url, handler) => app.post(url, wrap(handler));
 
   // ── Trust Railway's proxy so req.secure / x-forwarded-proto resolve correctly ──
   app.set('trust proxy', 1);
@@ -21,13 +67,10 @@ function startDashboard(client) {
   // ── Force HTTPS + HSTS (defense in depth; Railway's edge already redirects, this covers direct/edge-cache edge cases) ──
   app.use((req, res, next) => {
     if (process.env.NODE_ENV === 'production' && req.headers['x-forwarded-proto'] === 'http') {
-      return res.redirect(301, `https://${req.headers.host}${req.originalUrl}`);
+      return res.redirect(301, `${BASE_URL}${req.originalUrl}`);
     }
     res.setHeader('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
-    // Baseline hardening headers. Not a full CSP (the dashboard loads Google
-    // Analytics + Discord CDN images/emoji from various origins, so a strict
-    // CSP would need real testing to avoid breaking those); these three cost
-    // nothing and have no compatibility risk.
+    // Additional hardening alongside the Content Security Policy above.
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
@@ -39,25 +82,39 @@ function startDashboard(client) {
   // transfer size on every visit.
   app.use(compression());
 
-  app.use(express.json());
-  app.use(
-    session({
-      name: 'spamtrap',
-      keys: [process.env.SESSION_SECRET || 'spamtrap-secret-' + Date.now()],
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-    })
-  );
+  app.use(express.json({ limit: '32kb' }));
+  const sessions = serverSessions({
+    secret: process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex'),
+    secure: process.env.NODE_ENV === 'production',
+  });
+  app.locals.close = () => sessions.close();
+  app.use(['/auth', '/api'], sessions);
+  const rates = new Map();
+  app.use(['/api', '/auth'], (req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store');
+    const now = Date.now();
+    for (const [key, value] of rates) if (value.until <= now) rates.delete(key);
+    const key = req.ip;
+    const value = rates.get(key) || { count: 0, until: now + 60000 };
+    if (!rates.has(key) && rates.size >= 10000) return res.status(503).json({ error: 'Please try again later' });
+    rates.set(key, value);
+    if (++value.count > 120) { res.setHeader('Retry-After', '60'); return res.status(429).json({ error: 'Too many requests; please wait a minute' }); }
+    if (req.method === 'POST') {
+      if (!req.is('application/json')) return res.status(415).json({ error: 'Use application/json' });
+      if (req.headers.origin && req.headers.origin !== new URL(BASE_URL).origin) return res.status(403).json({ error: 'Invalid request origin' });
+      if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) return res.status(400).json({ error: 'Expected a JSON object' });
+    }
+    next();
+  });
 
   // ── Static files ──
   // Cache images/assets for a week; keep HTML on no-cache so dashboard
   // updates (and deploys) always take effect without a stale page.
   app.use(
     express.static(path.join(__dirname, 'public'), {
-      maxAge: '7d',
+      maxAge: '1d',
       setHeaders: (res, filePath) => {
-        if (filePath.endsWith('.html')) {
+        if (/\.(html|css|js)$/.test(filePath)) {
           res.setHeader('Cache-Control', 'no-cache');
         }
       },
@@ -80,8 +137,8 @@ function startDashboard(client) {
     }
 
     try {
-      const member = guild.members.cache.get(req.session.user.id) || (await guild.members.fetch(req.session.user.id));
-      if (guild.ownerId === member.id || member.permissions.has(PermissionsBitField.Flags.ManageGuild)) {
+      const member = await guild.members.fetch({ user: req.session.user.id, force: true });
+      if (canManageTrap(guild, member, store.getGuild(guild.id))) {
         return guild;
       }
     } catch (err) {
@@ -96,9 +153,10 @@ function startDashboard(client) {
   // Generates a random `state` value tied to this session so /auth/callback
   // can verify the request actually originated here, not from an attacker
   // replaying/forging a callback (login CSRF).
-  app.get('/auth/discord', (req, res) => {
+  get('/auth/discord', (req, res) => {
     const state = crypto.randomBytes(16).toString('hex');
     req.session.oauthState = state;
+    req.session.oauthStartedAt = Date.now();
 
     const params = new URLSearchParams({
       client_id: CLIENT_ID,
@@ -111,20 +169,20 @@ function startDashboard(client) {
   });
 
   // ── Auth: callback from Discord ──
-  app.get('/auth/callback', async (req, res) => {
+  get('/auth/callback', async (req, res) => {
     const { code, state } = req.query;
     const expectedState = req.session.oauthState;
     req.session.oauthState = null; // one-time use regardless of outcome
 
     if (!code) return res.redirect('/');
-    if (!state || !expectedState || state !== expectedState) {
+    if (typeof code !== 'string' || typeof state !== 'string' || !expectedState || state !== expectedState || Date.now() - (req.session.oauthStartedAt || 0) > 600000) {
       console.error('[DASHBOARD] OAuth state mismatch - possible CSRF attempt or expired session');
       return res.redirect('/?error=invalid_state');
     }
 
     try {
       // Exchange code for tokens
-      const tokenRes = await fetch('https://discord.com/api/oauth2/token', {
+      const tokenRes = await discordFetch('https://discord.com/api/oauth2/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
@@ -139,12 +197,15 @@ function startDashboard(client) {
       if (!tokens.access_token) return res.redirect('/?error=auth_failed');
 
       // Fetch user info
-      const userRes = await fetch('https://discord.com/api/users/@me', {
+      const userRes = await discordFetch('https://discord.com/api/users/@me', {
         headers: { Authorization: `Bearer ${tokens.access_token}` },
       });
       const user = await userRes.json();
 
-      // Store in session
+      if (!/^\d+$/.test(user.id || '') || typeof user.username !== 'string') throw new Error('Invalid Discord user response');
+      req.rotateSession();
+      req.session.tokenExpiresAt = Date.now() + Math.min(7 * 86400, Number(tokens.expires_in) || 3600) * 1000;
+      // Tokens stay on the server; cookies contain only an opaque session ID.
       req.session.accessToken = tokens.access_token;
       req.session.user = {
         id: user.id,
@@ -152,7 +213,7 @@ function startDashboard(client) {
         globalName: user.global_name || user.username,
         avatar: user.avatar
           ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
-          : `https://cdn.discordapp.com/embed/avatars/${parseInt(user.id) % 5}.png`,
+          : `https://cdn.discordapp.com/embed/avatars/${Number((BigInt(user.id) >> 22n) % 6n)}.png`,
       };
 
       res.redirect('/');
@@ -163,58 +224,53 @@ function startDashboard(client) {
   });
 
   // ── Auth: logout ──
-  app.get('/auth/logout', (req, res) => {
+  get('/auth/logout', (req, res) => {
     req.session = null;
     res.redirect('/');
   });
 
   // ── API: current user ──
-  app.get('/api/me', (req, res) => {
+  get('/api/me', (req, res) => {
     if (!req.session.user) return res.json({ loggedIn: false });
     res.json({ loggedIn: true, user: req.session.user });
   });
 
   // ── API: user's guilds where bot is present ──
-  app.get('/api/guilds', async (req, res) => {
+  get('/api/guilds', async (req, res) => {
     if (!req.session.accessToken) return res.status(401).json({ error: 'Not logged in' });
 
     try {
-      const guildsRes = await fetch('https://discord.com/api/users/@me/guilds', {
+      const guildsRes = await discordFetch('https://discord.com/api/users/@me/guilds', {
         headers: { Authorization: `Bearer ${req.session.accessToken}` },
       });
       const userGuilds = await guildsRes.json();
 
-      if (!Array.isArray(userGuilds)) return res.json([]);
+      if (!Array.isArray(userGuilds)) throw new Error('Invalid Discord server list');
 
-      // Filter: user has Manage Server permission AND bot is in the guild
-      const botGuildIds = new Set(client.guilds.cache.map((g) => g.id));
-      const MANAGE_GUILD = 0x20;
-
-      const filtered = userGuilds
-        .filter((g) => (parseInt(g.permissions) & MANAGE_GUILD) === MANAGE_GUILD && botGuildIds.has(g.id))
-        .map((g) => {
+      // OAuth lists membership; bot REST checks the exact same live policy as commands.
+      const filtered = [];
+      for (const g of userGuilds) {
+        const guild = client.guilds.cache.get(g.id);
+        if (!guild) continue;
+        try {
+          const member = await guild.members.fetch({ user: req.session.user.id, force: true });
           const config = store.getGuild(g.id);
-          return {
-            id: g.id,
-            name: g.name,
-            icon: g.icon
-              ? `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png?size=64`
-              : null,
-            catchCount: config.catchCount || 0,
-            action: config.action,
-            trapChannels: config.trapChannels.length,
-          };
-        });
+          if (!canManageTrap(guild, member, config)) continue;
+          filtered.push({ id: g.id, name: g.name, icon: g.icon ? 'https://cdn.discordapp.com/icons/' + g.id + '/' + g.icon + '.png?size=64' : null,
+            catchCount: config.catchCount || 0, action: config.action, trapChannels: config.trapChannels.length });
+        } catch (_) { /* No membership/access: omit this guild. */ }
+      }
 
       res.json(filtered);
     } catch (err) {
       console.error('[DASHBOARD] Guilds fetch error:', err.message);
-      res.status(500).json({ error: 'Failed to fetch guilds' });
+      if (err.status === 401) { req.session = null; return res.status(401).json({ error: 'Session expired; sign in again' }); }
+      res.status(502).json({ error: 'Failed to fetch guilds' });
     }
   });
 
   // ── API: guild stats ──
-  app.get('/api/guild/:id/stats', async (req, res) => {
+  get('/api/guild/:id/stats', async (req, res) => {
     const guildId = req.params.id;
     const guild = await requireGuildAccess(req, res, guildId);
     if (!guild) return;
@@ -237,6 +293,11 @@ function startDashboard(client) {
         ? { id: config.logChannel, name: guild?.channels.cache.get(config.logChannel)?.name || 'unknown' }
         : null,
       experiments: config.experiments,
+      setupWarnings: [
+        ...(!guild.members.me?.permissions.has(PermissionsBitField.Flags.BanMembers) ? ['Bot needs Ban Members permission.'] : []),
+        ...config.trapChannels.filter(id => !usableChannel(guild, id)).map(() => 'A trap channel is missing or the bot cannot access it.'),
+        'Place the bot role above members it should moderate. Manage optional protections with /protection in Discord.',
+      ],
       allowedRoles: (config.allowedRoles || []).map((id) => {
         const role = guild?.roles.cache.get(id);
         return { id, name: role?.name || 'Unknown' };
@@ -250,7 +311,7 @@ function startDashboard(client) {
   });
 
   // ── API: get custom messages ──
-  app.get('/api/guild/:id/messages', async (req, res) => {
+  get('/api/guild/:id/messages', async (req, res) => {
     if (!(await requireGuildAccess(req, res, req.params.id))) return;
     const config = store.getGuild(req.params.id);
     const { DEFAULT_WARNING, DEFAULT_DM, DEFAULT_LOG } = require('../lib/messages');
@@ -265,10 +326,12 @@ function startDashboard(client) {
   });
 
   // ── API: save custom messages ──
-  app.post('/api/guild/:id/messages', async (req, res) => {
+  post('/api/guild/:id/messages', async (req, res) => {
     if (!(await requireGuildAccess(req, res, req.params.id))) return;
     const guildId = req.params.id;
     const config = store.getGuild(guildId);
+    const validationError = validateMessages(req.body);
+    if (validationError) return res.status(400).json({ error: validationError });
     const { warning, dm, log } = req.body;
 
     config.customMessages.warning = warning || null;
@@ -280,7 +343,7 @@ function startDashboard(client) {
   });
 
   // ── API: get roles ──
-  app.get('/api/guild/:id/roles', async (req, res) => {
+  get('/api/guild/:id/roles', async (req, res) => {
     const guild = await requireGuildAccess(req, res, req.params.id);
     if (!guild) return;
     const config = store.getGuild(req.params.id);
@@ -302,24 +365,24 @@ function startDashboard(client) {
   });
 
   // ── API: update roles ──
-  app.post('/api/guild/:id/roles', async (req, res) => {
+  post('/api/guild/:id/roles', async (req, res) => {
     const guild = await requireGuildAccess(req, res, req.params.id);
     if (!guild) return;
     const config = store.getGuild(req.params.id);
     const { allowedRoles } = req.body;
 
-    if (!Array.isArray(allowedRoles)) return res.status(400).json({ error: 'allowedRoles must be an array' });
+    if (!Array.isArray(allowedRoles) || allowedRoles.length > 50 || allowedRoles.some(id => typeof id !== 'string' || id === guild.id || !guild.roles.cache.has(id) || guild.roles.cache.get(id).managed)) return res.status(400).json({ error: 'Choose up to 50 valid server roles; everyone and managed roles cannot be allowed' });
 
     // Only accept role ids that actually exist on this guild.
     const validRoleIds = allowedRoles.filter((id) => typeof id === 'string' && guild.roles.cache.has(id));
 
-    config.allowedRoles = validRoleIds;
+    config.allowedRoles = [...new Set(validRoleIds)];
     store.saveGuild(req.params.id, config);
     res.json({ success: true });
   });
 
   // ── API: get channels (for the trap channel / log channel editors) ──
-  app.get('/api/guild/:id/channels', async (req, res) => {
+  get('/api/guild/:id/channels', async (req, res) => {
     const guild = await requireGuildAccess(req, res, req.params.id);
     if (!guild) return;
     const config = store.getGuild(req.params.id);
@@ -342,7 +405,7 @@ function startDashboard(client) {
   // maybeDeleteOldAutoChannel/postWarning/postOrUpdateKickCounter helpers
   // from lib/trapChannel.js), so setting it from the dashboard behaves
   // identically to setting it in Discord.
-  app.post('/api/guild/:id/channels', async (req, res) => {
+  post('/api/guild/:id/channels', async (req, res) => {
     const guild = await requireGuildAccess(req, res, req.params.id);
     if (!guild) return;
     const guildId = req.params.id;
@@ -363,13 +426,13 @@ function startDashboard(client) {
     // same safety /spamtrap channels applies.
     const seen = new Set();
     const validIds = trapChannels.filter((id) => {
-      if (typeof id !== 'string' || !guild.channels.cache.has(id)) return false;
+      if (!usableChannel(guild, id)) return false;
       if (seen.has(id)) return false;
       seen.add(id);
       return true;
     });
-    if (validIds.length === 0) {
-      return res.status(400).json({ error: "None of the provided channels exist on this server" });
+    if (validIds.length !== new Set(trapChannels).size || validIds.length === 0) {
+      return res.status(400).json({ error: "Choose text channels where the bot can view, send messages and read history" });
     }
 
     await maybeDeleteOldAutoChannel(guild, g, validIds);
@@ -405,7 +468,7 @@ function startDashboard(client) {
   // Same channel the bot makes for itself on join, but on demand from the
   // dashboard - for servers that deleted theirs, or that would rather not
   // create one by hand in Discord first.
-  app.post('/api/guild/:id/create-channel', async (req, res) => {
+  post('/api/guild/:id/create-channel', async (req, res) => {
     const guild = await requireGuildAccess(req, res, req.params.id);
     if (!guild) return;
     const guildId = req.params.id;
@@ -467,14 +530,14 @@ function startDashboard(client) {
   });
 
   // ── API: set or clear the log channel ──
-  app.post('/api/guild/:id/log', async (req, res) => {
+  post('/api/guild/:id/log', async (req, res) => {
     const guild = await requireGuildAccess(req, res, req.params.id);
     if (!guild) return;
     const guildId = req.params.id;
     const { logChannel } = req.body;
 
-    if (logChannel !== null && logChannel !== undefined && (typeof logChannel !== 'string' || !guild.channels.cache.has(logChannel))) {
-      return res.status(400).json({ error: 'logChannel must be a valid channel id on this server, or null to clear it' });
+    if (logChannel !== null && logChannel !== undefined && !usableChannel(guild, logChannel)) {
+      return res.status(400).json({ error: 'Choose an accessible text channel, or null to clear it' });
     }
 
     const config = store.getGuild(guildId);
@@ -484,7 +547,7 @@ function startDashboard(client) {
   });
 
   // ── API: global overview ──
-  app.get('/api/overview', (req, res) => {
+  get('/api/overview', (req, res) => {
     const db = store.readDb();
     res.json({
       totalServers: client.guilds.cache.size,
@@ -494,16 +557,31 @@ function startDashboard(client) {
   });
 
   // ── Static pages ──
-  app.get('/privacy', (req, res) => {
+  get('/privacy', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'privacy.html'));
   });
-  app.get('/terms', (req, res) => {
+  get('/terms', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'terms.html'));
   });
 
   // ── Home ──
-  app.get('/', (req, res) => {
+  get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  });
+
+  get('/health', (req, res) => {
+    try {
+      store.healthCheck();
+      if (!client.isReady() || client.commandsReady === false) return res.status(503).json({ status: 'unavailable' });
+      res.json({ status: 'ok' });
+    } catch (_) { res.status(503).json({ status: 'unavailable' }); }
+  });
+
+  app.use((err, req, res, next) => {
+    console.error('[DASHBOARD] Request failed:', err.message);
+    if (res.headersSent) return next(err);
+    const status = err.status >= 400 && err.status < 600 ? err.status : 500;
+    res.status(status).json({ error: status === 400 ? 'Invalid JSON request' : status === 413 ? 'Request is too large' : status === 503 ? 'Please try again later' : 'Request failed; please try again' });
   });
 
   // ── Anything else unmatched: a real 404, not a silent 200 ──
@@ -517,23 +595,15 @@ function startDashboard(client) {
     res.status(404).sendFile(path.join(__dirname, 'public', 'index.html'));
   });
 
-  // ── Start ──
-  const PORT = process.env.PORT || 3000;
-  const server = app.listen(PORT, () => {
-    console.log(`[DASHBOARD] Running at ${BASE_URL}`);
-    console.log(`[DASHBOARD] OAuth client_id: ${CLIENT_ID}`);
-    console.log(`[DASHBOARD] Redirect URI: ${REDIRECT_URI}`);
-  });
-
-  // Any publicly exposed port gets occasional malformed/non-HTTP traffic
-  // (scanners, stray TCP probes, proxy health-check quirks) - Node already
-  // rejects it and destroys the socket safely on its own, but without a
-  // 'clientError' listener it also logs a scary-looking raw stack trace for
-  // every occurrence. Handle it quietly instead: still reject the request,
-  // just without the alarming log noise for something that isn't a bug.
-  server.on('clientError', (err, socket) => {
-    if (socket.writable) socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
-  });
+  return app;
 }
 
-module.exports = { startDashboard };
+function startDashboard(client) {
+  const app = createDashboard(client);
+  const server = app.listen(process.env.PORT || 3000, () => console.log('[DASHBOARD] Listening'));
+  server.on('close', app.locals.close);
+  server.on('clientError', (err, socket) => { if (socket.writable) socket.end('HTTP/1.1 400 Bad Request\r\n\r\n'); });
+  return server;
+}
+
+module.exports = { startDashboard, createDashboard, validateDashboardEnvironment };

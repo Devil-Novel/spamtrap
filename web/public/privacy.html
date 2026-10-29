@@ -80,15 +80,16 @@ code{background:var(--surface);padding:2px 6px;border-radius:4px;font-size:13px;
 <p>Your data is only used to operate Spam Trap. This includes protecting your server, saving your configuration, displaying dashboard statistics, recording moderation actions, and providing the features you enable.</p>
 
 <h3>Data Storage and Security</h3>
-<p>Your data is stored securely on our Railway-hosted infrastructure. Dashboard sessions use encrypted cookies that expire after seven days to help keep your account secure.</p>
+<p>Your data is stored securely on our Railway-hosted infrastructure. Dashboard cookies contain only a signed, random session ID. Discord access tokens and profile details stay in server memory. Sessions expire after at most seven days or when the Discord access token expires, whichever comes first. Signing out invalidates the session on the server; a bot restart signs dashboard users out.</p>
 
 <h3>Data Retention</h3>
+<p>One rolling database backup is retained for recovery from a damaged write. It is replaced on the next write. Removing the bot deletes the server from both the active database and its rolling backup. Failed softban unbans are kept as pending recovery records (user ID, server ID, a unique ban reason, attempt count and retry time) until resolved or the bot is removed.</p>
 <p>Your server configuration is stored only while Spam Trap remains in your server; removing the bot deletes it automatically (see Data Deletion below). Recent moderation activity is limited to the latest five actions shown per server. We do not keep a separate log of every individual moderation action beyond that; only aggregate catch counts (per-server and site-wide totals) are retained.</p>
 <p>For the server protections: temporary counters and hashes live only in memory and expire within the detection window (and are cleared whenever the bot restarts). Protection incident records are limited to the latest 20 per server plus a running count, and are deleted with the rest of the server's data when the bot is removed.</p>
 <p>Alerts and log entries the bot posts in your own Discord channels are ordinary Discord messages. They remain in Discord until someone deletes them there; we do not control or retain them.</p>
 
 <h3>Data Deletion</h3>
-<p>Removing Spam Trap from your server automatically and permanently deletes that server's stored configuration and statistics; no need to contact us separately. If you'd rather keep your configuration for later, use the <code>/spamtrap disable</code> command instead, which turns off moderation without deleting anything. For any other data question, reach out through the contact options below.</p>
+<p>Removing Spam Trap from your server automatically and permanently deletes that server's stored configuration and statistics; no need to contact us separately. If you'd rather keep your configuration for later, use the <code>/spamtrap disable</code> command instead, which turns off trap-channel moderation without deleting settings. Optional server protections have separate switches under /protection. For any other data question, reach out through the contact options below.</p>
 
 <h3>Children's Privacy</h3>
 <p>Spam Trap is not intended for users under the age of 13 and follows Discord's minimum age requirements.</p>
