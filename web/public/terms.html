@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="halloween">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -48,6 +48,8 @@ code{background:var(--surface);padding:2px 6px;border-radius:4px;font-size:13px;
 .footer a{color:var(--text3);margin:0 12px}
 .footer a:hover{color:var(--orange)}
 </style>
+<!-- Seasonal theme (palette only on this page). Remove data-theme from <html> to switch it off. -->
+<link rel="stylesheet" href="/halloween.css">
 </head>
 <body>
 <nav class="nav">
@@ -61,7 +63,7 @@ code{background:var(--surface);padding:2px 6px;border-radius:4px;font-size:13px;
 
 <div class="container">
 <h1>Terms of Service</h1>
-<p class="subtitle">Last updated: August 26, 2026</p>
+<p class="subtitle">Last updated: October 29, 2026</p>
 
 <h3>Service Overview</h3>
 <p>Spam Trap is a free Discord moderation bot designed to detect spam, stop compromised accounts, and help keep Discord communities safe.</p>
@@ -74,6 +76,7 @@ code{background:var(--surface);padding:2px 6px;border-radius:4px;font-size:13px;
 
 <h3>How the Bot Works</h3>
 <p>Spam Trap automatically monitors configured trap channels. When spam is detected, it performs the configured moderation action, removes spam messages, notifies the affected user when appropriate, and records the action in your moderation logs.</p>
+<p>Administrators may additionally enable optional <strong>server protections</strong> (scam links, raids, mass mentions, repeated messages, new-member restrictions, webhook spam, anti-nuke). These are off by default and alert-only until an administrator chooses a stronger action. Scam detection is heuristic and may produce false positives; anti-nuke reacts after actions occur and cannot restore deleted channels or roles or act on accounts ranked above the bot. Administrators are responsible for the actions they configure.</p>
 
 <h3>Automatic Trap Channel</h3>
 <p>When Spam Trap joins a server, it automatically creates a <strong>spam trap</strong> channel with a warning message and a live kick counter. A <strong>Translations</strong> button on that message shows the warning in multiple languages to anyone who clicks it. Administrators can rename or replace this channel at any time.</p>
@@ -108,7 +111,7 @@ code{background:var(--surface);padding:2px 6px;border-radius:4px;font-size:13px;
   <a href="/">Home</a>
   <a href="/privacy">Privacy Policy</a>
   <a href="/terms">Terms of Service</a>
-  <p style="margin-top:12px">Devil Novel &copy; 2026</p>
+  <p style="margin-top:12px">Ayman Mostafa &copy; 2026</p>
 </footer>
 </body>
 </html>

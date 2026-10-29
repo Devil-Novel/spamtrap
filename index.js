@@ -75,6 +75,14 @@ const INTENTS = [
   GatewayIntentBits.GuildModeration,
 ];
 
+// Opt-in member events, used only by raid protection (join bursts). This is
+// the privileged "Server Members Intent": it must be switched on in the
+// Developer Portal (and approved by Discord once the bot is large enough)
+// BEFORE this flag is set, otherwise Discord refuses the whole login. Off by
+// default so a deployment with only Message Content enabled still connects.
+const ENABLE_MEMBER_EVENTS = String(process.env.ENABLE_MEMBER_EVENTS || '').toLowerCase() === 'true';
+if (ENABLE_MEMBER_EVENTS) INTENTS.push(GatewayIntentBits.GuildMembers);
+
 // Human names of the privileged intents, so a refused login can say exactly
 // which Developer Portal toggle to flip rather than a bare "disallowed intents".
 const PRIVILEGED_INTENT_NAMES = {
@@ -88,6 +96,12 @@ const client = new Client({
   intents: INTENTS,
   partials: [Partials.Channel],
 });
+
+// Server protection (scam links, raids, mentions, repeats, newcomers,
+// webhooks, anti-nuke). Lives in lib/protection/, every feature starts OFF,
+// and it is wired to run only for non-trap channels - see messageCreate.
+const { createProtection } = require('./lib/protection');
+const protection = createProtection({ client, memberEvents: ENABLE_MEMBER_EVENTS });
 
 // The two login failures that can never fix themselves: Discord refusing a
 // privileged intent that's toggled off, or a wrong/reset token. For these,
@@ -561,18 +575,66 @@ client.once('clientReady', async () => {
 // ---------- messageCreate ----------
 
 client.on('messageCreate', async (message) => {
+  // 1) Trap channel - the original behaviour, untouched. Runs first and on
+  //    its own try/catch so nothing in the protections below can affect it.
   try {
     // message.member is null for webhook-sent messages (Discord doesn't
     // always flag webhook authors as "bot", so that alone won't catch them)
     // and for a couple of other edge cases where there's no real server
     // member behind the message. There's nothing to ban/moderate in that
     // case, so skip it instead of letting handleCatch throw on member.id.
-    if (message.author.bot || !message.guild || !message.member) return;
-    const g = store.getGuild(message.guild.id);
-    if (!g.trapChannels.includes(message.channel.id)) return;
-    await handleCatch(message, g);
+    if (message.author && !message.author.bot && message.guild && message.member) {
+      const g = store.getGuild(message.guild.id);
+      if (g.trapChannels.includes(message.channel.id)) {
+        await handleCatch(message, g);
+        return; // trap channels are never also subject to the protections
+      }
+    }
   } catch (err) {
     console.error('messageCreate error:', err);
+  }
+
+  // 2) Server protections for every other channel. All features start off,
+  //    and the handler never throws, but it's isolated here anyway.
+  try {
+    if (message.guild) await protection.onMessage(message);
+  } catch (err) {
+    console.error('[PROTECTION] messageCreate error:', err);
+  }
+});
+
+// Edited messages are re-checked (a link or mentions can be added after the
+// fact). The detectors replace that message's earlier contribution rather
+// than counting it twice.
+client.on('messageUpdate', async (oldMessage, newMessage) => {
+  try {
+    if (!newMessage || !newMessage.guild) return;
+    const g = store.getGuild(newMessage.guild.id);
+    if (newMessage.channel && g.trapChannels.includes(newMessage.channel.id)) return;
+    await protection.onMessageUpdate(oldMessage, newMessage);
+  } catch (err) {
+    console.error('[PROTECTION] messageUpdate error:', err);
+  }
+});
+
+// Join bursts (raid protection). Only registered when member events were
+// requested - without the intent Discord never sends this event anyway.
+if (ENABLE_MEMBER_EVENTS) {
+  client.on('guildMemberAdd', async (member) => {
+    try {
+      await protection.onMemberAdd(member);
+    } catch (err) {
+      console.error('[PROTECTION] guildMemberAdd error:', err);
+    }
+  });
+}
+
+// Anti-nuke. Discord only delivers this to bots with View Audit Log.
+client.on('guildAuditLogEntryCreate', async (entry, guild) => {
+  try {
+    await protection.onAuditEntry(entry, guild);
+  } catch (err) {
+    console.error('[PROTECTION] audit log error:', err);
   }
 });
 
@@ -609,6 +671,13 @@ client.on('interactionCreate', async (interaction) => {
           content: `${E.protection} This command only works in a server. If you just invited the bot, please try again in a few seconds.`,
           flags: MessageFlags.Ephemeral,
         });
+      }
+
+      // /protection has its own, stricter gate (server owner or Administrator
+      // only) inside the handler - it is not covered by the /spamtrap
+      // "allowed roles" list because it can delete messages and strip roles.
+      if (interaction.commandName === 'protection') {
+        return await protection.command(interaction);
       }
 
       if (!hasPermission(interaction)) {
@@ -777,7 +846,7 @@ client.on('interactionCreate', async (interaction) => {
         if (sub === 'disable') {
           g.trapChannels = [];
           store.saveGuild(guildId, g);
-          return await interaction.reply(`${E.done} Spam Trap disabled. Other settings were kept — use \`/spamtrap channel\` to re-enable.`);
+          return await interaction.reply(`${E.done} Trap channels disabled. Other settings were kept — use \`/spamtrap channel\` to re-enable. This does not affect the server protections (scam, raid, mentions, …), which have their own switches under \`/protection\`.`);
         }
 
         if (sub === 'info') {
@@ -800,6 +869,7 @@ client.on('interactionCreate', async (interaction) => {
               { name: `${E.safety} /spamtrap addrole @role`, value: 'Add a role that can manage the bot.', inline: false },
               { name: `${E.safety} /spamtrap removerole @role`, value: 'Remove a role from managing the bot.', inline: false },
               { name: `${E.safety} /spamtrap roles`, value: 'View all roles that can manage the bot.', inline: false },
+              { name: `${E.protection} /protection`, value: 'Optional server protections (scam links, raids, mass mentions, repeats, newcomers, webhooks, anti-nuke). All off by default; Administrator only; separate from the trap channel.', inline: false },
             )
             .setFooter({ text: 'spamtrap.help' });
           return await interaction.reply({ embeds: [infoEmbed], flags: MessageFlags.Ephemeral });
@@ -1049,7 +1119,8 @@ client.on('guildDelete', (guild) => {
   // up in a previous deploy (e.g. it's still transiently unavailable to us).
   // Only log/act when there was actually something left to delete, so this
   // doesn't spam "[LEAVE] Removed from..." on every single redeploy.
-  const removed = store.deleteGuild(guild.id);
+  const removed = store.deleteGuild(guild.id); // includes the server's protection config + incidents
+  protection.onGuildDelete(guild); // and its in-memory counters/raid state
   if (removed) {
     console.log(`[LEAVE] Removed from ${guild.name || 'an uncached server'} (${guild.id}) - deleting stored data.`);
   }

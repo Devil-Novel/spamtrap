@@ -1,0 +1,510 @@
+/* ==========================================================================
+   SPAM TRAP - "Haunted Steel" seasonal theme (Halloween)
+   --------------------------------------------------------------------------
+   HOW IT WORKS
+   Every rule here is scoped to  html[data-theme="halloween"]. The theme is
+   purely presentational: it recolors the existing CSS variables, restyles
+   existing components, and adds a few decorative layers that are marked
+   .hw-only in the markup. Nothing in here changes behaviour.
+
+   TO DISABLE THE THEME
+   Remove  data-theme="halloween"  from the <html> tag in
+   web/public/index.html (and privacy.html / terms.html). That alone restores
+   the default look: every rule below stops matching, and every .hw-only
+   decoration is hidden by the first rule in this file. The stylesheet link
+   and the artwork can stay in place; they are inert without the attribute.
+
+   ACCESSIBILITY / PERFORMANCE NOTES
+   - All decorations are pointer-events:none, aria-hidden, alt="" and sit on a
+     negative z-index inside an isolated stacking context, so they can never
+     cover or intercept a control.
+   - Artwork is hidden below 1024px (tablet keeps a faint overlay only) and
+     fully off below 768px.
+   - prefers-reduced-motion disables every animation and transition.
+   ========================================================================== */
+
+/* Theme-only markup stays hidden unless the theme is on. */
+.hw-only { display: none; }
+
+/* --------------------------------------------------------------------------
+   1. Palette
+   -------------------------------------------------------------------------- */
+html[data-theme="halloween"] {
+  --bg: #0a0a0d;
+  --bg2: #0f0f13;
+  --bg3: #141418;
+  --surface: #15151a;
+  --surface2: #1c1c22;
+  --surface3: #26262e;
+  --border: #2d2419;
+  --border2: #6a4318;
+  --text: #f4efe8;
+  --text2: #bcae9d;
+  --text3: #8a7d70;
+  --orange: #ff7a1a;
+  --orange2: #ffa23c;
+  --orange-glow: rgba(255, 122, 26, 0.16);
+  --red: #ff5f5f;
+  --green: #62e68e;
+  --amber: #ffb547;
+  --hw-purple: #6b1fb5;
+  --hw-steel: linear-gradient(180deg, #1d1d23 0%, #121216 100%);
+  --hw-steel-edge: inset 0 1px 0 rgba(255, 255, 255, 0.05), inset 0 -1px 0 rgba(0, 0, 0, 0.6);
+  --hw-ring: 0 0 0 3px rgba(255, 122, 26, 0.35);
+}
+
+html[data-theme="halloween"] body {
+  background:
+    radial-gradient(1200px 600px at 50% -200px, rgba(255, 122, 26, 0.07), transparent 60%),
+    var(--bg);
+}
+
+html[data-theme="halloween"] ::selection { background: rgba(255, 122, 26, 0.35); }
+
+/* --------------------------------------------------------------------------
+   2. Shared pieces: focus, buttons, chips, controls, panels
+   -------------------------------------------------------------------------- */
+html[data-theme="halloween"] :is(a, button, select, textarea, input, [tabindex]):focus-visible {
+  outline: 2px solid var(--orange2);
+  outline-offset: 3px;
+  box-shadow: var(--hw-ring);
+}
+
+html[data-theme="halloween"] .btn-primary {
+  background: linear-gradient(180deg, #ffa23c 0%, #ff7a1a 55%, #e8600a 100%);
+  color: #1a0c00;
+  border: 1px solid #ffb95e;
+  box-shadow: 0 0 0 1px #7a3d0a, 0 4px 18px rgba(255, 122, 26, 0.35), var(--hw-steel-edge);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+html[data-theme="halloween"] .btn-primary:hover {
+  box-shadow: 0 0 0 1px #7a3d0a, 0 6px 28px rgba(255, 122, 26, 0.55), var(--hw-steel-edge);
+}
+html[data-theme="halloween"] .btn-outline {
+  background: var(--hw-steel);
+  color: var(--text);
+  border: 1px solid var(--border2);
+  box-shadow: var(--hw-steel-edge);
+}
+html[data-theme="halloween"] .btn-outline:hover { border-color: var(--orange); color: var(--orange2); }
+html[data-theme="halloween"] .btn-ghost {
+  background: var(--hw-steel);
+  color: var(--text2);
+  border: 1px solid var(--border);
+}
+html[data-theme="halloween"] .btn-ghost:hover { color: var(--orange2); border-color: var(--border2); }
+html[data-theme="halloween"] .btn:disabled,
+html[data-theme="halloween"] select:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+html[data-theme="halloween"] .exp-chip {
+  background: var(--hw-steel);
+  border-color: var(--border);
+  color: var(--text3);
+}
+html[data-theme="halloween"] .exp-chip.on {
+  background: linear-gradient(180deg, rgba(255, 122, 26, 0.22), rgba(255, 122, 26, 0.1));
+  border-color: rgba(255, 122, 26, 0.55);
+  color: var(--orange2);
+  box-shadow: 0 0 12px rgba(255, 122, 26, 0.18);
+}
+
+/* Inputs keep their inline colors via the variables above; this only adds the
+   orange focus treatment the inline styles don't define. */
+html[data-theme="halloween"] :is(select, textarea, input):focus {
+  border-color: var(--orange) !important;
+}
+html[data-theme="halloween"] textarea:focus { box-shadow: var(--hw-ring); }
+
+html[data-theme="halloween"] code {
+  background: #0a0a0d;
+  border: 1px solid var(--border);
+  color: var(--orange2);
+}
+
+/* --------------------------------------------------------------------------
+   3. Navigation
+   -------------------------------------------------------------------------- */
+html[data-theme="halloween"] .nav {
+  background: linear-gradient(180deg, rgba(20, 20, 24, 0.97), rgba(12, 12, 15, 0.95));
+  border-bottom: 1px solid var(--border2);
+  box-shadow: 0 1px 0 rgba(255, 122, 26, 0.25), 0 8px 30px rgba(0, 0, 0, 0.6);
+}
+html[data-theme="halloween"] .nav-brand span {
+  background: linear-gradient(90deg, #e9e9ee 0%, #c9c9d2 38%, #ffa23c 62%, #ff7a1a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 0.5px;
+}
+html[data-theme="halloween"] .nav-links a:hover { color: var(--orange2); background: rgba(255, 122, 26, 0.08); }
+html[data-theme="halloween"] .hamburger-btn:hover { background: rgba(255, 122, 26, 0.1); color: var(--orange2); }
+html[data-theme="halloween"] .scroll-top-btn {
+  background: linear-gradient(180deg, #ffa23c, #ff7a1a);
+  color: #1a0c00;
+  box-shadow: 0 0 0 1px #7a3d0a, 0 4px 22px rgba(255, 122, 26, 0.5);
+}
+
+/* --------------------------------------------------------------------------
+   4. Homepage - hero
+   The full-bleed artwork sits on .landing as a background so it spans the
+   viewport (the .hero element itself is capped at 1100px). The darkening
+   gradients keep the left-hand copy readable over the artwork.
+   -------------------------------------------------------------------------- */
+html[data-theme="halloween"] .landing {
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(90deg, rgba(10, 10, 13, 0.92) 0%, rgba(10, 10, 13, 0.8) 32%, rgba(10, 10, 13, 0.28) 58%, rgba(10, 10, 13, 0.62) 100%),
+    linear-gradient(180deg, rgba(10, 10, 13, 0.55) 0%, rgba(10, 10, 13, 0) 22%, rgba(10, 10, 13, 0) 68%, var(--bg) 100%),
+    url("/halloween/bg-hero.webp");
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  background-position: top center, top center, top center;
+  background-size: 100% 56.25vw, 100% 56.25vw, 100% 56.25vw;
+}
+
+html[data-theme="halloween"] .hero { position: relative; isolation: isolate; }
+html[data-theme="halloween"] .hero-text { position: relative; z-index: 1; }
+html[data-theme="halloween"] .hero-text h1 { font-weight: 900; letter-spacing: -1.2px; text-shadow: 0 2px 24px rgba(0, 0, 0, 0.8); }
+html[data-theme="halloween"] .hero-text h1 em {
+  background: linear-gradient(135deg, #ffb547 0%, #ff7a1a 55%, #ff4d1a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+html[data-theme="halloween"] .hero-text p { color: #d8cdbf; text-shadow: 0 1px 12px rgba(0, 0, 0, 0.8); }
+html[data-theme="halloween"] .hero-text p strong { color: var(--orange2); }
+
+/* Community celebration - static text, deliberately separate from the live
+   stats bar further down. */
+html[data-theme="halloween"] .hw-celebrate {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 22px;
+}
+html[data-theme="halloween"] .hw-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(10, 10, 13, 0.7);
+  border: 1px solid var(--border2);
+  color: var(--orange2);
+  font: 700 13px var(--font);
+  box-shadow: 0 0 16px rgba(255, 122, 26, 0.15), var(--hw-steel-edge);
+}
+html[data-theme="halloween"] .hw-pill svg { width: 16px; height: 16px; fill: currentColor; }
+html[data-theme="halloween"] .hw-thanks { color: var(--text2); font-size: 13px; }
+
+/* Hero artwork: the approved wordmark badge replaces the framed square logo. */
+html[data-theme="halloween"] .hero-logo-wrap {
+  width: 440px;
+  height: 300px;
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
+  animation: none;
+}
+html[data-theme="halloween"] .hero-logo-wrap > img:not(.hw-badge) { display: none; }
+html[data-theme="halloween"] .hero-logo-wrap .hw-badge {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 0 18px rgba(255, 122, 26, 0.55)) drop-shadow(0 12px 30px rgba(0, 0, 0, 0.8));
+  animation: hwBadgeGlow 3.2s ease-in-out infinite alternate;
+}
+@keyframes hwBadgeGlow {
+  from { filter: drop-shadow(0 0 14px rgba(255, 122, 26, 0.4)) drop-shadow(0 12px 30px rgba(0, 0, 0, 0.8)); }
+  to   { filter: drop-shadow(0 0 30px rgba(255, 122, 26, 0.75)) drop-shadow(0 12px 30px rgba(0, 0, 0, 0.8)); }
+}
+
+html[data-theme="halloween"] .hero-card {
+  background: linear-gradient(180deg, rgba(28, 28, 34, 0.96), rgba(16, 16, 20, 0.96));
+  border: 1px solid var(--border2);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6), 0 6px 24px rgba(0, 0, 0, 0.6), 0 0 14px rgba(255, 122, 26, 0.12);
+}
+html[data-theme="halloween"] .hero-card:active { box-shadow: 0 8px 30px rgba(255, 122, 26, 0.35); }
+html[data-theme="halloween"] .hero-card .hash { color: var(--orange2); }
+html[data-theme="halloween"] .hero-card .orange-text { color: var(--orange2); }
+
+/* Restrained embers: a handful of static glowing dots with a slow fade. */
+html[data-theme="halloween"] .hw-embers {
+  display: block;
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+html[data-theme="halloween"] .hw-embers::before,
+html[data-theme="halloween"] .hw-embers::after {
+  content: "";
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #ffb547;
+  box-shadow:
+    120px 80px 0 0 rgba(255, 160, 60, 0.9), 320px 420px 0 0 rgba(255, 120, 30, 0.8),
+    560px 130px 0 -1px rgba(255, 180, 80, 0.8), 760px 360px 0 0 rgba(255, 120, 30, 0.75),
+    900px 90px 0 -1px rgba(255, 160, 60, 0.8), 1010px 300px 0 0 rgba(255, 120, 30, 0.7),
+    210px 300px 0 -1px rgba(255, 200, 120, 0.7), 640px 480px 0 0 rgba(255, 120, 30, 0.7);
+  filter: blur(0.4px);
+  animation: hwEmber 6s ease-in-out infinite alternate;
+}
+html[data-theme="halloween"] .hw-embers::after {
+  left: 60px; top: 40px;
+  animation-delay: -3s;
+  opacity: 0.6;
+}
+@keyframes hwEmber { from { opacity: 0.35; } to { opacity: 0.9; } }
+
+/* --------------------------------------------------------------------------
+   5. Decorative layers (shared by homepage sections and the dashboard)
+   -------------------------------------------------------------------------- */
+html[data-theme="halloween"] .hw-deco {
+  display: block;
+  position: absolute;
+  pointer-events: none;
+  user-select: none;
+  z-index: -1;
+}
+html[data-theme="halloween"] .hw-deco img { display: block; pointer-events: none; }
+html[data-theme="halloween"] .hw-deco svg { display: block; pointer-events: none; }
+
+/* Pumpkins */
+html[data-theme="halloween"] .hw-pumpkin { width: 260px; height: auto; filter: drop-shadow(0 0 22px rgba(255, 122, 26, 0.45)); }
+html[data-theme="halloween"] .hw-pumpkin--sm { width: 170px; }
+html[data-theme="halloween"] .hw-pumpkin--flip { transform: scaleX(-1); }
+
+/* Bats + cobwebs are inline SVG: crisp at any size, no extra requests. */
+html[data-theme="halloween"] .hw-bat { width: 54px; height: 27px; fill: #120a06; opacity: 0.9; filter: drop-shadow(0 0 6px rgba(255, 122, 26, 0.35)); }
+html[data-theme="halloween"] .hw-bat--sm { width: 34px; height: 17px; opacity: 0.75; }
+html[data-theme="halloween"] .hw-web { width: 180px; height: 180px; fill: none; stroke: rgba(255, 150, 60, 0.32); stroke-width: 1; }
+html[data-theme="halloween"] .hw-web--flip { transform: scaleX(-1); }
+
+/* Purple mist along the bottom of a section */
+html[data-theme="halloween"] .hw-mist {
+  display: block;
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 160px;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 100% at 20% 100%, rgba(107, 31, 181, 0.28), transparent 70%),
+    radial-gradient(50% 100% at 80% 100%, rgba(107, 31, 181, 0.22), transparent 70%),
+    linear-gradient(180deg, transparent, rgba(107, 31, 181, 0.12));
+}
+
+/* --------------------------------------------------------------------------
+   6. Homepage - stats, features, how it works, commands, CTA, footer
+   -------------------------------------------------------------------------- */
+html[data-theme="halloween"] .stats-bar {
+  position: relative;
+  isolation: isolate;
+  background: transparent;
+  border-top: 1px solid var(--border2);
+  border-bottom: 1px solid var(--border);
+}
+html[data-theme="halloween"] .stat-item {
+  background: var(--hw-steel);
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  padding: 22px 28px;
+  min-width: 190px;
+  box-shadow: var(--hw-steel-edge), 0 8px 30px rgba(0, 0, 0, 0.5), 0 0 18px rgba(255, 122, 26, 0.08);
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+}
+html[data-theme="halloween"] .stat-item .num {
+  background: linear-gradient(135deg, #ffb547, #ff7a1a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 10px rgba(255, 122, 26, 0.35));
+}
+
+html[data-theme="halloween"] .features { position: relative; isolation: isolate; }
+html[data-theme="halloween"] .features h2,
+html[data-theme="halloween"] .how h2,
+html[data-theme="halloween"] .commands h2,
+html[data-theme="halloween"] .cta h2 { font-weight: 900; letter-spacing: -0.8px; }
+html[data-theme="halloween"] .features h2::after,
+html[data-theme="halloween"] .how h2::after,
+html[data-theme="halloween"] .commands h2::after {
+  content: "";
+  display: block;
+  width: 56px;
+  height: 3px;
+  margin: 12px auto 0;
+  background: linear-gradient(90deg, transparent, var(--orange), transparent);
+  box-shadow: 0 0 12px rgba(255, 122, 26, 0.6);
+}
+html[data-theme="halloween"] .feat-card {
+  background: var(--hw-steel);
+  border: 1px solid var(--border);
+  box-shadow: var(--hw-steel-edge);
+}
+html[data-theme="halloween"] .feat-card::after { background: linear-gradient(90deg, transparent, var(--orange2), transparent); }
+html[data-theme="halloween"] .feat-card:hover { border-color: var(--border2); box-shadow: var(--hw-steel-edge), 0 12px 40px rgba(255, 122, 26, 0.14); }
+html[data-theme="halloween"] .feat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  background: rgba(255, 122, 26, 0.08);
+  border: 1px solid rgba(255, 122, 26, 0.25);
+  box-shadow: 0 0 14px rgba(255, 122, 26, 0.12);
+}
+html[data-theme="halloween"] .feat-icon img { width: 42px; height: 42px; }
+
+html[data-theme="halloween"] .how { background: var(--bg2); isolation: isolate; }
+html[data-theme="halloween"] .how::before { background: none; opacity: 1; background-image: radial-gradient(800px 300px at 50% 0, rgba(255, 122, 26, 0.06), transparent 70%); }
+html[data-theme="halloween"] .step-num {
+  background: linear-gradient(180deg, #ffa23c, #e8600a);
+  color: #1a0c00;
+  box-shadow: 0 0 0 1px #7a3d0a, 0 0 18px rgba(255, 122, 26, 0.5);
+}
+html[data-theme="halloween"] .step-content h4 { color: var(--text); }
+
+html[data-theme="halloween"] .commands { position: relative; isolation: isolate; }
+html[data-theme="halloween"] .cmd-row { border-color: var(--border); }
+html[data-theme="halloween"] .cmd-name { color: var(--orange2); }
+
+html[data-theme="halloween"] .cta { background: var(--bg2); border-top: 1px solid var(--border2); isolation: isolate; }
+html[data-theme="halloween"] .cta::before { background: radial-gradient(circle, rgba(255, 122, 26, 0.1), transparent 70%); }
+
+html[data-theme="halloween"] .footer { border-top: 1px solid var(--border2); background: #08080a; }
+html[data-theme="halloween"] .footer a:hover { color: var(--orange2) !important; }
+
+/* --------------------------------------------------------------------------
+   7. Dashboard - same palette, much less decoration, opaque panels
+   -------------------------------------------------------------------------- */
+html[data-theme="halloween"] .dash {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  overflow: clip;
+  background: var(--bg);
+}
+/* Faint, darkened artwork band behind the welcome area only. */
+html[data-theme="halloween"] .dash::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: 360px;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(10, 10, 13, 0.35), rgba(10, 10, 13, 0.75) 60%, var(--bg) 100%),
+    url("/halloween/bg-dash.webp") center top / cover no-repeat;
+  opacity: 0.9;
+}
+html[data-theme="halloween"] .dash .container { position: relative; z-index: 1; }
+
+html[data-theme="halloween"] .dash-welcome {
+  background: var(--hw-steel);
+  border: 1px solid var(--border2);
+  box-shadow: var(--hw-steel-edge), 0 10px 40px rgba(0, 0, 0, 0.6);
+}
+html[data-theme="halloween"] .dash-welcome::before { background: linear-gradient(90deg, var(--orange), #ff4d1a, var(--orange)); }
+html[data-theme="halloween"] .dash-welcome-left img { border-color: var(--orange); }
+
+html[data-theme="halloween"] .d-stat-box,
+html[data-theme="halloween"] .d-card,
+html[data-theme="halloween"] .guild-card,
+html[data-theme="halloween"] .tabs {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--hw-steel-edge);
+}
+html[data-theme="halloween"] .d-stat-box::before { background: linear-gradient(90deg, var(--orange), #ff4d1a); }
+html[data-theme="halloween"] .d-stat-box:hover,
+html[data-theme="halloween"] .guild-card:hover { border-color: var(--border2); box-shadow: var(--hw-steel-edge), 0 8px 30px rgba(255, 122, 26, 0.12); }
+html[data-theme="halloween"] .d-stat-box .num {
+  background: linear-gradient(135deg, #ffb547, #ff7a1a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+html[data-theme="halloween"] .guild-card { background: var(--hw-steel); }
+html[data-theme="halloween"] .guild-card::after { background: linear-gradient(90deg, transparent, var(--orange2), transparent); }
+html[data-theme="halloween"] .guild-icon { background: #0a0a0d; border-color: var(--border); }
+html[data-theme="halloween"] .guild-badge.softban { background: rgba(255, 122, 26, 0.12); color: var(--orange2); border-color: rgba(255, 122, 26, 0.3); }
+html[data-theme="halloween"] .guild-badge.ban { background: rgba(255, 95, 95, 0.12); color: var(--red); border-color: rgba(255, 95, 95, 0.3); }
+
+html[data-theme="halloween"] .tab { color: var(--text2); }
+html[data-theme="halloween"] .tab:hover { color: var(--text); background: rgba(255, 122, 26, 0.06); }
+html[data-theme="halloween"] .tab.active {
+  background: linear-gradient(180deg, #ffa23c, #e8600a);
+  color: #1a0c00;
+  box-shadow: 0 0 0 1px #7a3d0a, 0 2px 14px rgba(255, 122, 26, 0.4);
+}
+
+html[data-theme="halloween"] .d-card h3 { color: var(--text); }
+html[data-theme="halloween"] .btn-back {
+  background: var(--hw-steel);
+  border-color: var(--border2);
+  box-shadow: var(--hw-steel-edge);
+}
+html[data-theme="halloween"] .btn-back:hover { color: var(--orange2); border-color: var(--orange); }
+html[data-theme="halloween"] .action-row { border-color: var(--border); }
+html[data-theme="halloween"] .action-row .user-id { background: #0a0a0d; border: 1px solid var(--border); }
+html[data-theme="halloween"] .action-row .action-type { color: var(--amber); }
+html[data-theme="halloween"] .config-row { border-color: var(--border); }
+html[data-theme="halloween"] .config-value { color: var(--orange2); }
+html[data-theme="halloween"] .spinner { border-color: var(--border); border-top-color: var(--orange); }
+
+/* Dashboard edge decorations: outer corners only, below everything. */
+html[data-theme="halloween"] .hw-dash-deco { position: absolute; inset: 0; z-index: -1; pointer-events: none; display: block; }
+
+/* --------------------------------------------------------------------------
+   8. Responsive: reduce, then remove, artwork as space shrinks
+   -------------------------------------------------------------------------- */
+@media (max-width: 1279px) {
+  html[data-theme="halloween"] .hw-pumpkin { width: 200px; }
+  html[data-theme="halloween"] .hw-pumpkin--sm { width: 130px; }
+  html[data-theme="halloween"] .hw-web { width: 130px; height: 130px; }
+}
+@media (max-width: 1023px) {
+  /* Tablet: artwork becomes a faint texture behind a near-opaque overlay;
+     pumpkins/webs go, bats stay small. */
+  html[data-theme="halloween"] .landing {
+    background-image:
+      linear-gradient(180deg, rgba(10, 10, 13, 0.86) 0%, rgba(10, 10, 13, 0.9) 70%, var(--bg) 100%),
+      url("/halloween/bg-hero.webp");
+    background-size: 100% 56.25vw, 100% 56.25vw;
+  }
+  html[data-theme="halloween"] .hw-pumpkin,
+  html[data-theme="halloween"] .hw-web,
+  html[data-theme="halloween"] .hw-dash-deco { display: none; }
+  html[data-theme="halloween"] .hero-logo-wrap { width: 360px; height: 245px; }
+}
+@media (max-width: 767px) {
+  /* Phone: no artwork at all, only palette + a soft glow. Keeps the page light
+     and leaves the headline and buttons completely clear. */
+  html[data-theme="halloween"] .landing { background-image: radial-gradient(600px 300px at 50% 0, rgba(255, 122, 26, 0.12), transparent 70%); background-size: auto; }
+  html[data-theme="halloween"] .hw-deco,
+  html[data-theme="halloween"] .hw-embers,
+  html[data-theme="halloween"] .hw-mist { display: none; }
+  html[data-theme="halloween"] .hero-logo-wrap { width: 280px; height: 190px; }
+  html[data-theme="halloween"] .hw-celebrate { gap: 8px; }
+  html[data-theme="halloween"] .stat-item { min-width: 0; width: 100%; max-width: 320px; }
+  html[data-theme="halloween"] .nav-links { background: #0f0f13; border-bottom: 1px solid var(--border2); }
+  html[data-theme="halloween"] .dash::before { height: 220px; }
+}
+
+/* --------------------------------------------------------------------------
+   9. Reduced motion
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme="halloween"] .hero-logo-wrap .hw-badge,
+  html[data-theme="halloween"] .hw-embers::before,
+  html[data-theme="halloween"] .hw-embers::after,
+  html[data-theme="halloween"] .hero-card { animation: none !important; }
+  html[data-theme="halloween"] * { transition-duration: 0.01ms !important; }
+}

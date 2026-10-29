@@ -82,6 +82,40 @@ All commands require the configured allowed roles, or Ban Members + Manage Serve
 
 ---
 
+## Server Protection (optional, off by default)
+
+Separate from the trap channel, Spam Trap 4.0 can also watch ordinary channels for seven kinds of trouble. **Every protection starts disabled**, and the default action is **alert only** (nothing is deleted or timed out until you say so). Full details, defaults, limitations and a test-server checklist are in [PROTECTION_GUIDE.md](PROTECTION_GUIDE.md).
+
+| Feature | What it watches | Notes |
+|---|---|---|
+| `scam` | Links to domains on your block list; *suspected* fake Nitro gifts and Discord look-alike domains | Local heuristics only - no external lookups, no attachment scanning, no redirect following. Heuristic hits are reported as *suspected* and can be wrong. |
+| `raid` | Bursts of joins | Needs `ENABLE_MEMBER_EVENTS=true` (see Intents). Never bans/times out anyone for joining; never locks the server. |
+| `mentions` | Mass user/role/everyone mentions per sender, across channels | Edited messages replace their earlier count. |
+| `repeats` | The same message posted repeatedly by one account, across channels | Only short-lived hashes are kept, never the text. |
+| `newcomers` | Links/attachments from members who joined minutes ago | Trusted roles and staff exempt. |
+| `webhooks` | Message floods from one webhook | Deletes messages only; never deletes the webhook. Trusted webhook IDs are skipped. |
+| `antinuke` | Bursts of channel/role deletions, kicks, bans, dangerous role grants or permission additions by one account | Alert-only by default; optional `strip_roles` containment. Cannot restore deletions or act on accounts above the bot's role. Owner and bot always exempt; Administrators are **not** auto-exempt. |
+
+### `/protection` commands (Administrator or server owner only, ephemeral)
+
+| Command | Description |
+|---|---|
+| `/protection status` | Features, actions, limits, exemptions, whether member events are requested, and any **missing permissions** for the current settings |
+| `/protection recent` | The latest 20 incidents + total count (feature, account/webhook ID, reason, outcome - never message content) |
+| `/protection feature name:<feature> enabled:<true/false>` | Switch one of the seven features |
+| `/protection limit name:<setting> value:<number>` | Adjust a threshold or window (ranges are enforced) |
+| `/protection action target:messages type:<alert/delete/timeout>` | What to do with flagged messages |
+| `/protection action target:antinuke type:<alert/strip_roles>` | What to do on an anti-nuke trigger |
+| `/protection trust role:<role> trusted:<true/false>` | Exempt a role (max 50; `@everyone` refused) |
+| `/protection webhook id:<id> trusted:<true/false>` | Trust a webhook by numeric ID (max 50; never a URL/token) |
+| `/protection domain list:<blockedDomains/allowedDomains> operation:<add/remove> host:<domain>` | Domain lists (max 50 each; subdomains match; block beats allow) |
+
+Alerts reuse the existing `/spamtrap log` channel, never ping anyone, and are rate-limited to 6 per minute per server.
+
+**Trap controls vs protection controls:** `/spamtrap …` configures the trap channel (and `/spamtrap disable` turns off trap channels *only*). `/protection …` configures the seven protections, each with its own switch. Alert-only protections never interfere with the trap handler, which always runs first for trap-channel messages.
+
+---
+
 ## Experiments
 
 Toggle experiments on or off with `/spamtrap toggle`. Each experiment changes a specific behavior:
@@ -235,9 +269,11 @@ https://discord.com/oauth2/authorize?client_id=1523811499766976723&permissions=1
 - Message Content (**privileged** - must be toggled on under Bot → Privileged Gateway Intents in the Developer Portal)
 - Guild Moderation
 
-The bot deliberately does **not** request the Server Members or Presence intents. It never needed them (every member it touches comes from a message/interaction payload or a one-off REST call), and each privileged intent is one more thing that needs Discord's approval and annual re-review once the bot is large - and one more toggle that, if off, makes Discord refuse the login entirely.
+**Optional, raid protection only:** Server Members (**privileged**). Requested **only** when `ENABLE_MEMBER_EVENTS=true`; the default `false` keeps the bot connecting with just Message Content enabled. Enable the portal toggle (and obtain Discord's approval once the bot is large enough) *before* setting the flag - otherwise Discord refuses the login and the bot exits with a `[FATAL]` message naming the toggle. The Presence intent is never requested.
 
-If a privileged intent is turned off, the bot exits on startup with a `[FATAL]` message naming the exact toggle to flip. It exits on purpose: the alternative is a process that stays "Active" on Railway while being completely offline.
+The other protections never need the Server Members Intent: the member data they use arrives in the message/interaction payloads or via one-off REST calls.
+
+For `delete`/`timeout` actions and anti-nuke the bot additionally needs Manage Messages, Moderate Members, View Audit Log and (for `strip_roles`) Manage Roles - `/protection status` reports what is missing.
 
 ### User Permissions
 
@@ -268,6 +304,7 @@ If a privileged intent is turned off, the bot exits on startup with a `[FATAL]` 
 | `DATABASE_PATH` | **Yes** | Path to the JSON database file. Must point inside a mounted persistent Volume (e.g. `/data/db.json`) - see "Persistent Storage" below. |
 | `BOT_OWNER_ID` | No | Your Discord user id. Enables `/spamtrap servers` (owner-only cross-server list). Leave unset to disable that command. |
 | `GUILD_ID` | No | For testing: register commands to one server only |
+| `ENABLE_MEMBER_EVENTS` | No (default `false`) | Request the privileged Server Members Intent for join-based raid protection. Only set `true` after enabling the portal toggle (and getting Discord's approval where required). |
 
 ### Deploy to Railway
 
@@ -314,7 +351,20 @@ spam-trap-bot/
 ├── deploy-commands.js    # Manual command registration script
 ├── lib/
 │   ├── store.js          # JSON database (guild config, logs, stats)
-│   └── messages.js       # Default messages (warning, DM, log) + template engine
+│   ├── messages.js       # Default messages (warning, DM, log) + template engine
+│   ├── trapChannel.js    # Trap-channel message/counter helpers (shared with the dashboard)
+│   ├── emojis.js         # Custom application emoji ids
+│   └── protection/       # Optional server protections (all off by default)
+│       ├── config.js     #   defaults, validation, persistence under guild.protection
+│       ├── state.js      #   bounded in-memory counters, hashes, raid state, audit dedupe
+│       ├── scam.js       #   local link checks: block/allow lists, look-alike + Nitro heuristics
+│       ├── messages.js   #   mentions / repeats / newcomers / webhooks / raid filter + enforcement
+│       ├── raid.js       #   join-burst detection (needs ENABLE_MEMBER_EVENTS)
+│       ├── antinuke.js   #   audit-log burst detection + optional strip_roles containment
+│       ├── incidents.js  #   incident records (20 + count) and rate-limited alerts
+│       ├── permissions.js#   exemptions and missing-permission checks
+│       └── commands.js   #   /protection handler
+├── tests/                # Offline tests with mocked Discord objects: npm test
 ├── web/
 │   ├── server.js         # Express dashboard: OAuth2, API routes
 │   └── public/
@@ -324,6 +374,7 @@ spam-trap-bot/
 │       └── *.png         # Branded images (badges, logo, backgrounds)
 ├── data/
 │   └── db.json           # Persistent database (auto-created)
+├── PROTECTION_GUIDE.md   # Deployment, intents, permissions, commands, limits, test checklist
 ├── package.json
 ├── Dockerfile
 ├── railway.json
@@ -335,16 +386,18 @@ spam-trap-bot/
 
 ## Languages Supported
 
-The default warning message is displayed in 8 languages:
+The trap-channel warning is posted in English; a **Translations** button on that message shows it in 10 more languages:
 
-1. English
-2. German (Deutsch)
-3. Indonesian (Bahasa Indonesia)
-4. Malay (Bahasa Melayu)
-5. Portuguese - Brazil (Português)
-6. Russian (Русский)
-7. Spanish (Español)
-8. Arabic (العربية)
+1. German (Deutsch)
+2. Indonesian (Bahasa Indonesia)
+3. Malay (Bahasa Melayu)
+4. Portuguese - Brazil (Português)
+5. Russian (Русский)
+6. Spanish (Español)
+7. Arabic (العربية)
+8. Chinese (中文)
+9. Korean (한국어)
+10. French (Français)
 
 ---
 

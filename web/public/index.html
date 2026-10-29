@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="halloween">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -24,7 +24,7 @@
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Spam Trap - Stop spammers before they spread.">
-<meta name="twitter:description" content="Free Discord moderation bot. Auto-catches spam bots and compromised accounts. 8 languages. Web dashboard. Zero configuration.">
+<meta name="twitter:description" content="Free Discord moderation bot. Auto-catches spam bots and compromised accounts. 11 languages. Web dashboard. Zero configuration.">
 <meta name="twitter:image" content="/og-image.png">
 <link rel="icon" href="https://cdn.discordapp.com/emojis/1524000021198930031.png?size=64">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -229,8 +229,17 @@ textarea:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba
 }
 @media(max-width:480px){.feat-grid{grid-template-columns:1fr}}
 </style>
+<!-- Seasonal theme. Purely presentational and scoped to html[data-theme="halloween"];
+     remove that attribute from the <html> tag above to switch it off. -->
+<link rel="stylesheet" href="/halloween.css">
 </head>
 <body>
+
+<!-- Seasonal theme: reusable bat / cobweb silhouettes (inline SVG, referenced via <use>). -->
+<svg aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden">
+  <symbol id="hw-sym-bat" viewBox="0 0 100 50"><path d="M50 30C45 20 35 15 25 18 15 20 8 28 2 24c4 10 10 14 18 12 6-1 10 2 14 8 4-6 10-8 16-4 6-4 12-2 16 4 4-6 8-9 14-8 8 2 14-2 18-12-6 4-13-4-23-6-10-3-20 2-25 12Z"/></symbol>
+  <symbol id="hw-sym-web" viewBox="0 0 200 200"><g><path d="M0 0L200 0M0 0L200 60M0 0L190 120M0 0L150 170M0 0L95 195M0 0L40 200M0 0L0 200"/><path d="M40 0Q38 28 30 40Q18 32 0 38"/><path d="M80 0Q76 56 60 80Q36 64 0 76"/><path d="M120 0Q114 84 90 120Q54 96 0 114"/><path d="M160 0Q152 112 120 160Q72 128 0 152"/><path d="M200 0Q190 140 150 200"/></g></symbol>
+</svg>
 
 <nav class="nav">
   <div class="nav-brand" role="button" tabindex="0" onclick="goHome()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();goHome()}"><img src="/nav-logo.png" alt="Spam Trap" style="height:28px"><span>SPAM TRAP</span></div>
@@ -238,6 +247,7 @@ textarea:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba
     <a href="mailto:aimanmoustafaa@gmail.com" class="btn btn-ghost btn-sm">Contact Us</a>
     <a href="#features" class="hide-mobile">Features</a>
     <a href="#how" class="hide-mobile">How It Works</a>
+    <a href="#protection" class="hide-mobile">Protection</a>
     <a href="#commands" class="hide-mobile">Commands</a>
     <a href="/privacy" class="hide-mobile">Privacy</a>
     <a href="/terms" class="hide-mobile">Terms</a>
@@ -253,6 +263,7 @@ textarea:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba
 <div class="landing" id="landingPage">
 
 <section class="hero">
+  <div class="hw-embers hw-only" aria-hidden="true"></div>
   <div class="hero-text">
     <h1>The Discord bot that<br><em>stops spammers before they spread.</em></h1>
     <p>Catch spammers before they reach your community. Spam Trap bot instantly detects and removes spam and compromised accounts through a dedicated <strong>#trap</strong> channel.</p>
@@ -263,9 +274,15 @@ textarea:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba
       </a>
       <a href="#how" class="btn btn-outline">How It Works</a>
     </div>
+    <!-- Community celebration. Static text on purpose: it is not one of the live
+         statistics shown further down and is never read from the API. -->
+    <div class="hw-celebrate hw-only">
+      <span class="hw-pill"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>10,000 community members</span>
+      <span class="hw-thanks">Thank you all for trusting us</span>
+    </div>
   </div>
   <div class="hero-visual" id="heroVisual">
-    <div class="hero-logo-wrap"><img src="/logo.png" alt="Spam Trap"></div>
+    <div class="hero-logo-wrap"><img src="/logo.png" alt="Spam Trap"><img class="hw-badge hw-only" src="/trap-badge.png" alt="Spam Trap" width="581" height="363" decoding="async"></div>
     <div class="hero-card" style="top:10px;left:0"><span class="hash">#</span><strong>trap</strong>&nbsp; Anything sent here is treated as spam.</div>
     <div class="hero-card" style="top:60px;right:0"><span class="red-dot"></span><strong>Spam attempt intercepted.</strong></div>
     <div class="hero-card" style="bottom:60px;left:0"><img src="/badge.png" alt=""><strong class="orange-text">Zero clicks. Zero delays.</strong></div>
@@ -283,14 +300,18 @@ textarea:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba
 </section>
 
 <section class="features" id="features">
+  <div class="hw-deco hw-only" aria-hidden="true" style="top:28px;right:6%"><svg class="hw-bat"><use href="#hw-sym-bat"/></svg></div>
+  <div class="hw-deco hw-only" aria-hidden="true" style="top:70px;right:11%"><svg class="hw-bat hw-bat--sm"><use href="#hw-sym-bat"/></svg></div>
+  <div class="hw-deco hw-only" aria-hidden="true" style="right:0;bottom:-24px"><img src="/halloween/pumpkin-sm.webp" class="hw-pumpkin hw-pumpkin--sm" alt="" width="320" height="324" loading="lazy" decoding="async"></div>
+  <div class="hw-mist hw-only" aria-hidden="true"></div>
   <h2>Why Choose Spam Trap?</h2>
   <p class="subtitle">Set it up in 2 commands. Let it protect your server forever.</p>
   <div class="feat-grid">
     <div class="feat-card"><div class="feat-icon"><img src="/feat-protection.png" alt="Instant Protection" loading="lazy"></div><h4>Instant Protection</h4><p>Automatically bans spammers the moment they post in the trap channel. Zero delay, zero manual work.</p></div>
     <div class="feat-card"><div class="feat-icon"><img src="/feat-safety.png" alt="Server Safety" loading="lazy"></div><h4>Server Safety</h4><p>Stops spam before it spreads. Compromised accounts are caught and notified before they can do damage.</p></div>
     <div class="feat-card"><div class="feat-icon"><img src="/feat-time.png" alt="Saves Time" loading="lazy"></div><h4>Saves Time</h4><p>Reduces moderator workload by handling spam automatically so your team can focus on the community.</p></div>
-    <div class="feat-card"><div class="feat-icon"><img src="/feat-easy.png" alt="Easy to Use" loading="lazy"></div><h4>Easy to Use</h4><p>Two commands to set up. 12 optional experiments to customize. A web dashboard to manage everything.</p></div>
-    <div class="feat-card"><div class="feat-icon"><img src="/feat-multilingual.png" alt="Multilingual Warnings" loading="lazy"></div><h4>Multilingual Warnings</h4><p>Warning message in 8 languages: English, German, Indonesian, Malay, Portuguese, Russian, Spanish, and Arabic.</p></div>
+    <div class="feat-card"><div class="feat-icon"><img src="/feat-easy.png" alt="Easy to Use" loading="lazy"></div><h4>Easy to Use</h4><p>Two commands to set up. 11 optional experiments to customize. A web dashboard for the trap settings.</p></div>
+    <div class="feat-card"><div class="feat-icon"><img src="/feat-multilingual.png" alt="Multilingual Warnings" loading="lazy"></div><h4>Multilingual Warnings</h4><p>Warning in English with a Translations button for 10 more languages: German, Indonesian, Malay, Portuguese, Russian, Spanish, Arabic, Chinese, Korean, and French.</p></div>
     <div class="feat-card"><div class="feat-icon"><img src="/feat-recovery.png" alt="Account Recovery" loading="lazy"></div><h4>Account Recovery</h4><p>Soft-banned users receive a DM with account recovery steps and a rejoin invite once their account is secure.</p></div>
     <div class="feat-card"><div class="feat-icon"><img src="/feat-dashboard.png" alt="Web Dashboard" loading="lazy"></div><h4>Web Dashboard</h4><p>View stats, customize messages, and manage settings from a branded web dashboard with Discord login.</p></div>
     <div class="feat-card"><div class="feat-icon"><img src="/feat-experiments.png" alt="11 Experiments" loading="lazy"></div><h4>11 Experiments</h4><p>Channel warmer, random renaming, timeout-first, and more. Toggle them on or off anytime.</p></div>
@@ -298,9 +319,12 @@ textarea:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba
 </section>
 
 <section class="how" id="how">
+  <div class="hw-deco hw-only" aria-hidden="true" style="top:34px;left:7%"><svg class="hw-bat hw-bat--sm"><use href="#hw-sym-bat"/></svg></div>
+  <div class="hw-deco hw-only" aria-hidden="true" style="top:0;right:0"><svg class="hw-web hw-web--flip"><use href="#hw-sym-web"/></svg></div>
+  <div class="hw-mist hw-only" aria-hidden="true"></div>
   <div class="how-inner">
     <h2>How It Works</h2>
-    <div class="step"><div class="step-num">1</div><div class="step-content"><h4>Bot joins and creates a trap</h4><p>When invited, Spam Trap auto-creates a <strong>🪤│spam-trap</strong> channel at the top of your server with a multilingual warning pinned inside.</p></div></div>
+    <div class="step"><div class="step-num">1</div><div class="step-content"><h4>Bot joins and creates a trap</h4><p>When invited, Spam Trap auto-creates a <strong>🪤│spam-trap</strong> channel at the top of your server with a pinned warning and a Translations button inside.</p></div></div>
     <div class="step"><div class="step-num">2</div><div class="step-content"><h4>A message is detected</h4><p>Spam bots blast every visible channel. When one hits your trap, the bot catches it instantly. Admins and server owners are always safe.</p></div></div>
     <div class="step"><div class="step-num">3</div><div class="step-content"><h4>The user gets a DM</h4><p>The bot sends a message explaining the account may be compromised, with steps to recover it: change password, enable 2FA, check authorized apps.</p></div></div>
     <div class="step"><div class="step-num">4</div><div class="step-content"><h4>The action runs</h4><p>Softban (default): ban then unban to purge messages while allowing the user to rejoin. Or permanent ban. Their spam is wiped from the server.</p></div></div>
@@ -308,7 +332,24 @@ textarea:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba
   </div>
 </section>
 
+<section class="features" id="protection">
+  <h2>Beyond the trap: optional server protections</h2>
+  <p class="subtitle">Seven extra protections for your ordinary channels. Every one is <strong>off by default</strong>, alert-only until you choose otherwise, and managed with <code>/protection</code> in Discord.</p>
+  <div class="feat-grid">
+    <div class="feat-card"><h4>Scam links</h4><p>Flags links to domains on your block list, plus <em>suspected</em> fake Nitro gifts and Discord look-alike domains. Checks run locally inside the bot: no external lookups, no attachment scanning, no redirect following. Heuristic matches can be wrong, so they're labelled as suspected.</p></div>
+    <div class="feat-card"><h4>Raid protection</h4><p>Notices unusually large bursts of joins and starts a timed raid mode. Nobody is banned or timed out just for joining, and the server is never locked down. Needs the Server Members Intent, enabled by the bot operator.</p></div>
+    <div class="feat-card"><h4>Mass mentions</h4><p>Counts user, role and @everyone/@here mentions per sender across all channels in a rolling window. Edited messages replace their earlier count instead of adding to it.</p></div>
+    <div class="feat-card"><h4>Repeated messages</h4><p>Catches the same text posted again and again by one account, even across channels and with changed capitalization, spacing or invisible characters. Only short-lived hashes are kept, never the text.</p></div>
+    <div class="feat-card"><h4>New member restrictions</h4><p>Optionally blocks links and attachments for a set number of minutes after someone joins. Trusted roles and staff are exempt.</p></div>
+    <div class="feat-card"><h4>Webhook spam</h4><p>Detects floods of messages from a single webhook. Deletes the messages when configured, never the webhook itself. Trusted webhook IDs are skipped.</p></div>
+    <div class="feat-card"><h4>Anti-nuke</h4><p>Watches the audit log for bursts of channel or role deletions, kicks, bans and dangerous role changes by one account. Alert-only by default, with optional containment that removes dangerous roles the bot is allowed to edit. It cannot restore what was deleted or act on accounts above its own role.</p></div>
+    <div class="feat-card"><h4>Alerts &amp; incidents</h4><p>Alerts go to your existing mod-log channel, never ping anyone, and are rate-limited so an attack can't flood the channel. The latest 20 incidents per server are kept, with the real outcome of each action, and no message content.</p></div>
+  </div>
+  <p class="subtitle" style="margin-top:28px;margin-bottom:0">These protections are configured with slash commands only. <code>/spamtrap disable</code> turns off trap channels; each protection has its own switch under <code>/protection</code>.</p>
+</section>
+
 <section class="commands" id="commands">
+  <div class="hw-deco hw-only" aria-hidden="true" style="top:0;left:0"><svg class="hw-web"><use href="#hw-sym-web"/></svg></div>
   <h2>Commands</h2>
   <div class="cmd-row"><span class="cmd-name">/spamtrap channel #ch</span><span class="cmd-desc">Set the trap channel. Posts a multilingual warning.</span></div>
   <div class="cmd-row"><span class="cmd-name">/spamtrap log #ch</span><span class="cmd-desc">Set the mod log channel for action reports.</span></div>
@@ -319,10 +360,22 @@ textarea:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba
   <div class="cmd-row"><span class="cmd-name">/spamtrap stats</span><span class="cmd-desc">View catch statistics and recent actions.</span></div>
   <div class="cmd-row"><span class="cmd-name">/spamtrap channels #1 #2...</span><span class="cmd-desc">Set up to 5 trap channels (needs Many Traps).</span></div>
   <div class="cmd-row"><span class="cmd-name">/spamtrap-messages</span><span class="cmd-desc">Customize warning, DM, and log messages via modal.</span></div>
-  <div class="cmd-row"><span class="cmd-name">/spamtrap disable</span><span class="cmd-desc">Turn off the trap. Keeps settings for later.</span></div>
+  <div class="cmd-row"><span class="cmd-name">/spamtrap disable</span><span class="cmd-desc">Turn off trap channels only. Keeps settings for later; server protections keep their own switches.</span></div>
+<div class="cmd-row"><span class="cmd-name">/protection status</span><span class="cmd-desc">Protection features, actions, limits, exemptions and any missing bot permissions. Administrator or owner only.</span></div>
+<div class="cmd-row"><span class="cmd-name">/protection recent</span><span class="cmd-desc">The latest 20 protection incidents and the total count. No message content is stored.</span></div>
+<div class="cmd-row"><span class="cmd-name">/protection feature name enabled</span><span class="cmd-desc">Switch scam, raid, mentions, repeats, newcomers, webhooks or antinuke on or off. All start off.</span></div>
+<div class="cmd-row"><span class="cmd-name">/protection limit name value</span><span class="cmd-desc">Adjust thresholds and windows (mention limit, repeat limit, join limit, timeout length, and more).</span></div>
+<div class="cmd-row"><span class="cmd-name">/protection action target type</span><span class="cmd-desc">Messages: alert, delete or timeout. Anti-nuke: alert or strip_roles. Alert is the default for both.</span></div>
+<div class="cmd-row"><span class="cmd-name">/protection trust role trusted</span><span class="cmd-desc">Exempt a role from the protections (up to 50; @everyone is refused).</span></div>
+<div class="cmd-row"><span class="cmd-name">/protection webhook id trusted</span><span class="cmd-desc">Trust a webhook by its numeric ID so its messages are not checked. Never paste a webhook URL or token.</span></div>
+<div class="cmd-row"><span class="cmd-name">/protection domain list operation host</span><span class="cmd-desc">Add or remove blocked and allowed domains. Subdomains match automatically; an explicit block always wins.</span></div>
 </section>
 
 <section class="cta">
+  <div class="hw-deco hw-only" aria-hidden="true" style="left:2%;bottom:-40px"><img src="/halloween/pumpkin.webp" class="hw-pumpkin" alt="" width="640" height="647" loading="lazy" decoding="async"></div>
+  <div class="hw-deco hw-only" aria-hidden="true" style="right:2%;bottom:-30px"><img src="/halloween/pumpkin-sm.webp" class="hw-pumpkin hw-pumpkin--sm hw-pumpkin--flip" alt="" width="320" height="324" loading="lazy" decoding="async"></div>
+  <div class="hw-deco hw-only" aria-hidden="true" style="top:26px;left:12%"><svg class="hw-bat"><use href="#hw-sym-bat"/></svg></div>
+  <div class="hw-mist hw-only" aria-hidden="true"></div>
   <h2>Protect your server today.</h2>
   <p>Easy commands. Zero configuration. Ultimate protection.</p>
   <div class="cta-buttons">
@@ -334,12 +387,18 @@ textarea:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba
 <footer class="footer">
   <a href="/privacy" style="color:var(--text3);margin:0 12px">Privacy Policy</a>
   <a href="/terms" style="color:var(--text3);margin:0 12px">Terms of Service</a>
-  <p style="margin-top:10px">Devil Novel &copy; 2026</p>
+  <p style="margin-top:10px">Ayman Mostafa &copy; 2026</p>
 </footer>
 </div>
 
 <!-- DASHBOARD -->
 <div class="dash" id="dashPage">
+<div class="hw-dash-deco hw-only" aria-hidden="true">
+  <div class="hw-deco" style="top:76px;right:3%"><svg class="hw-bat hw-bat--sm"><use href="#hw-sym-bat"/></svg></div>
+  <div class="hw-deco" style="top:66px;right:0"><svg class="hw-web hw-web--flip" style="width:120px;height:120px"><use href="#hw-sym-web"/></svg></div>
+  <div class="hw-deco" style="left:0;bottom:0"><img src="/halloween/pumpkin-sm.webp" class="hw-pumpkin hw-pumpkin--sm" alt="" width="320" height="324" loading="lazy" decoding="async"></div>
+  <div class="hw-deco" style="right:0;bottom:0"><img src="/halloween/pumpkin-sm.webp" class="hw-pumpkin hw-pumpkin--sm hw-pumpkin--flip" alt="" width="320" height="324" loading="lazy" decoding="async"></div>
+</div>
 <div class="container">
 <button class="btn-back" onclick="goHome()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Back to homepage</button>
 <div id="dashWelcome" class="dash-welcome" style="display:none"></div>

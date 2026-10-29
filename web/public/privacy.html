@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="halloween">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -48,6 +48,8 @@ code{background:var(--surface);padding:2px 6px;border-radius:4px;font-size:13px;
 .footer a{color:var(--text3);margin:0 12px}
 .footer a:hover{color:var(--orange)}
 </style>
+<!-- Seasonal theme (palette only on this page). Remove data-theme from <html> to switch it off. -->
+<link rel="stylesheet" href="/halloween.css">
 </head>
 <body>
 <nav class="nav">
@@ -61,14 +63,18 @@ code{background:var(--surface);padding:2px 6px;border-radius:4px;font-size:13px;
 
 <div class="container">
 <h1>Privacy Policy</h1>
-<p class="subtitle">Last updated: August 18, 2026</p>
+<p class="subtitle">Last updated: October 29, 2026</p>
 
 <h3>Information We Collect</h3>
 <p>To keep Spam Trap running properly, we store the information needed to protect your server. This includes your server configuration such as channel IDs, selected moderation action, enabled experiments, moderation logs, catch statistics, and Discord OAuth session data for the web dashboard.</p>
+<p>If your administrators enable any of the optional <strong>server protections</strong> (scam links, raid, mass mentions, repeated messages, new-member restrictions, webhook spam, anti-nuke), we also store that configuration: which features are on, the chosen actions and thresholds, trusted role IDs, trusted webhook IDs, and your blocked/allowed domain lists. Each protection incident is recorded as the feature that fired, the account or webhook ID involved, the channel ID, a short reason label, a timestamp, and the action outcome. <strong>Incident records never contain message text.</strong></p>
 <p>If the <strong>Forward Message</strong> experiment is enabled, the content of detected spam messages may also be stored in moderation logs.</p>
 
 <h3>Information We Don't Collect</h3>
-<p>Spam Trap respects your privacy. We do not read messages outside your trap channels. We never collect passwords, email addresses, payment information, or any sensitive personal data. We do not track users across different servers or sell your information to third parties.</p>
+<p>Spam Trap respects your privacy. By default, Spam Trap does not process messages outside your trap channels. We never collect passwords, email addresses, payment information, or any sensitive personal data. We do not track users across different servers or sell your information to third parties.</p>
+
+<h3>Optional Server-Wide Message Processing</h3>
+<p>Every server protection is <strong>off by default</strong>. When a server administrator turns one on, Spam Trap processes messages in that server's ordinary channels <em>in memory only</em> to check for the enabled condition (for example links on the server's block list, or many mentions in a short time). Message text is not stored: repeated-message detection keeps only short-lived hashes, and the other checks keep only temporary counters and timestamps, all of which expire within the configured detection window (at most a few minutes). Scam-link checks run locally inside the bot and never send message content to any external service; the bot does not scan attachments or follow links. Administrators can switch each protection off at any time with <code>/protection</code>.</p>
 
 <h3>How We Use Your Data</h3>
 <p>Your data is only used to operate Spam Trap. This includes protecting your server, saving your configuration, displaying dashboard statistics, recording moderation actions, and providing the features you enable.</p>
@@ -78,6 +84,8 @@ code{background:var(--surface);padding:2px 6px;border-radius:4px;font-size:13px;
 
 <h3>Data Retention</h3>
 <p>Your server configuration is stored only while Spam Trap remains in your server; removing the bot deletes it automatically (see Data Deletion below). Recent moderation activity is limited to the latest five actions shown per server. We do not keep a separate log of every individual moderation action beyond that; only aggregate catch counts (per-server and site-wide totals) are retained.</p>
+<p>For the server protections: temporary counters and hashes live only in memory and expire within the detection window (and are cleared whenever the bot restarts). Protection incident records are limited to the latest 20 per server plus a running count, and are deleted with the rest of the server's data when the bot is removed.</p>
+<p>Alerts and log entries the bot posts in your own Discord channels are ordinary Discord messages. They remain in Discord until someone deletes them there; we do not control or retain them.</p>
 
 <h3>Data Deletion</h3>
 <p>Removing Spam Trap from your server automatically and permanently deletes that server's stored configuration and statistics; no need to contact us separately. If you'd rather keep your configuration for later, use the <code>/spamtrap disable</code> command instead, which turns off moderation without deleting anything. For any other data question, reach out through the contact options below.</p>
@@ -103,7 +111,7 @@ code{background:var(--surface);padding:2px 6px;border-radius:4px;font-size:13px;
   <a href="/">Home</a>
   <a href="/privacy">Privacy Policy</a>
   <a href="/terms">Terms of Service</a>
-  <p style="margin-top:12px">Devil Novel &copy; 2026</p>
+  <p style="margin-top:12px">Ayman Mostafa &copy; 2026</p>
 </footer>
 </body>
 </html>
