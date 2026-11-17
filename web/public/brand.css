@@ -27,9 +27,20 @@ html[data-theme="spam-trap"] {
 }
 
 html[data-theme="spam-trap"] body {
+  isolation: isolate;
+  background: var(--bg);
+}
+
+html[data-theme="spam-trap"] body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
   background:
-    radial-gradient(1200px 600px at 50% -200px, rgba(255, 122, 26, 0.07), transparent 60%),
-    var(--bg);
+    linear-gradient(90deg, rgba(10, 10, 13, 0.66), rgba(10, 10, 13, 0.12) 68%, rgba(10, 10, 13, 0.3)),
+    linear-gradient(180deg, rgba(10, 10, 13, 0.12), rgba(10, 10, 13, 0.22) 45%, rgba(10, 10, 13, 0.82)),
+    url("spam-trap-steel-wide.webp") center / cover no-repeat;
 }
 
 html[data-theme="spam-trap"] ::selection { background: rgba(255, 122, 26, 0.35); }
@@ -122,21 +133,7 @@ html[data-theme="spam-trap"] .scroll-top-btn {
 
 /* --------------------------------------------------------------------------
    4. Homepage - hero
-   The full-bleed artwork sits on .landing as a background so it spans the
-   viewport (the .hero element itself is capped at 1100px). The darkening
-   gradients keep the left-hand copy readable over the artwork.
    -------------------------------------------------------------------------- */
-html[data-theme="spam-trap"] .landing {
-  background-color: var(--bg);
-  background-image:
-    linear-gradient(90deg, rgba(10, 10, 13, 0.92) 0%, rgba(10, 10, 13, 0.8) 32%, rgba(10, 10, 13, 0.28) 58%, rgba(10, 10, 13, 0.62) 100%),
-    linear-gradient(180deg, rgba(10, 10, 13, 0.55) 0%, rgba(10, 10, 13, 0) 22%, rgba(10, 10, 13, 0) 68%, var(--bg) 100%),
-    url("spam-trap-texture.webp");
-  background-repeat: no-repeat, no-repeat, no-repeat;
-  background-position: top center, top center, center top;
-  background-size: 100% 640px, 100% 640px, max(100%, 640px) 640px;
-}
-
 html[data-theme="spam-trap"] .hero { position: relative; isolation: isolate; }
 html[data-theme="spam-trap"] .hero-text { position: relative; z-index: 1; }
 html[data-theme="spam-trap"] .hero-text h1 { font-weight: 900; letter-spacing: -1.2px; text-shadow: 0 2px 24px rgba(0, 0, 0, 0.8); }
@@ -185,8 +182,11 @@ html[data-theme="spam-trap"] .hero-logo-wrap {
 }
 html[data-theme="spam-trap"] .hero-logo-wrap .hero-badge {
   display: block;
-  width: 100%;
+  /* The supplied square logo has transparent padding around the wordmark. */
+  width: 110.7%;
   height: auto;
+  flex: none;
+  transform: translateY(-1.6%);
   filter: drop-shadow(0 0 18px rgba(255, 122, 26, 0.55)) drop-shadow(0 12px 30px rgba(0, 0, 0, 0.8));
   animation: badgeGlow 3.2s ease-in-out infinite alternate;
 }
@@ -266,6 +266,8 @@ html[data-theme="spam-trap"] .stats-bar {
   border-bottom: 1px solid var(--border);
 }
 html[data-theme="spam-trap"] .stat-item {
+  position: relative;
+  overflow: hidden;
   background: var(--steel);
   border: 1px solid var(--border2);
   border-radius: 14px;
@@ -274,6 +276,29 @@ html[data-theme="spam-trap"] .stat-item {
   box-shadow: var(--steel-edge), 0 8px 30px rgba(0, 0, 0, 0.5), 0 0 18px rgba(255, 122, 26, 0.08);
   clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
 }
+/* A brief amber reflection travels across the steel underneath the labels. */
+html[data-theme="spam-trap"] .stat-item::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(110deg, transparent 32%, rgba(255, 171, 78, 0.13) 48%, rgba(255, 225, 178, 0.19) 52%, transparent 68%);
+  transform: translateX(-120%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html[data-theme="spam-trap"] .stat-item::before { animation: statsShine 9s ease-in-out infinite; }
+  html[data-theme="spam-trap"] .stat-item:nth-child(2)::before { animation-delay: .18s; }
+  html[data-theme="spam-trap"] .stat-item:nth-child(3)::before { animation-delay: .36s; }
+  html[data-theme="spam-trap"] .stat-item:nth-child(4)::before { animation-delay: .54s; }
+}
+
+@keyframes statsShine {
+  0%, 12% { transform: translateX(-120%); }
+  30%, 100% { transform: translateX(120%); }
+}
+
 html[data-theme="spam-trap"] .stat-item .num {
   background: linear-gradient(135deg, #ffb547, #ff7a1a);
   -webkit-background-clip: text;
@@ -317,7 +342,7 @@ html[data-theme="spam-trap"] .feat-icon {
 }
 html[data-theme="spam-trap"] .feat-icon img { width: 42px; height: 42px; }
 
-html[data-theme="spam-trap"] .how { background: var(--bg2); isolation: isolate; }
+html[data-theme="spam-trap"] .how { background: rgba(15, 15, 19, 0.87); isolation: isolate; }
 html[data-theme="spam-trap"] .how::before { background: none; opacity: 1; background-image: radial-gradient(800px 300px at 50% 0, rgba(255, 122, 26, 0.06), transparent 70%); }
 html[data-theme="spam-trap"] .step-num {
   background: linear-gradient(180deg, #ffa23c, #e8600a);
@@ -330,10 +355,24 @@ html[data-theme="spam-trap"] .commands { position: relative; isolation: isolate;
 html[data-theme="spam-trap"] .cmd-row { border-color: var(--border); }
 html[data-theme="spam-trap"] .cmd-name { color: var(--orange2); }
 
-html[data-theme="spam-trap"] .cta { background: var(--bg2); border-top: 1px solid var(--border2); isolation: isolate; }
+html[data-theme="spam-trap"] .cta { background: rgba(15, 15, 19, 0.87); border-top: 1px solid var(--border2); isolation: isolate; }
 html[data-theme="spam-trap"] .cta::before { background: radial-gradient(circle, rgba(255, 122, 26, 0.1), transparent 70%); }
 
 html[data-theme="spam-trap"] .footer { border-top: 1px solid var(--border2); background: #08080a; }
+html[data-theme="spam-trap"] .footer .linkedin-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  min-height: 36px;
+  vertical-align: middle;
+}
+html[data-theme="spam-trap"] .footer .linkedin-link img {
+  display: block;
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
 html[data-theme="spam-trap"] .footer a:hover { color: var(--orange2) !important; }
 
 /* --------------------------------------------------------------------------
@@ -342,24 +381,14 @@ html[data-theme="spam-trap"] .footer a:hover { color: var(--orange2) !important;
 html[data-theme="spam-trap"] .dash {
   position: relative;
   isolation: isolate;
-  overflow: hidden;
-  overflow: clip;
-  background: var(--bg);
-}
-/* Faint, darkened artwork band behind the welcome area only. */
-html[data-theme="spam-trap"] .dash::before {
-  content: "";
-  position: absolute;
-  left: 0; right: 0; top: 0;
-  height: 360px;
-  z-index: -2;
-  pointer-events: none;
-  background:
-    linear-gradient(180deg, rgba(10, 10, 13, 0.35), rgba(10, 10, 13, 0.75) 60%, var(--bg) 100%),
-    url("spam-trap-texture.webp") center top / cover no-repeat;
-  opacity: 0.9;
+  background: rgba(10, 10, 13, 0.45);
+  min-height: 100vh;
 }
 html[data-theme="spam-trap"] .dash .container { position: relative; z-index: 1; }
+
+html[data-theme="spam-trap"] .card-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr));
+}
 
 html[data-theme="spam-trap"] .dash-welcome {
   background: var(--steel);
@@ -414,30 +443,28 @@ html[data-theme="spam-trap"] .config-value { color: var(--orange2); }
 html[data-theme="spam-trap"] .spinner { border-color: var(--border); border-top-color: var(--orange); }
 
 /* --------------------------------------------------------------------------
-   8. Responsive: reduce, then remove, artwork as space shrinks
+   8. Responsive
    -------------------------------------------------------------------------- */
 @media (max-width: 1023px) {
-  /* Keep the texture faint behind the text on tablets. */
-  html[data-theme="spam-trap"] .landing {
-    background-image:
-      linear-gradient(180deg, rgba(10, 10, 13, 0.86) 0%, rgba(10, 10, 13, 0.9) 70%, var(--bg) 100%),
-      url("spam-trap-texture.webp");
-    background-size: 100% 640px, 100% 640px;
-  }
   html[data-theme="spam-trap"] .hero-logo-wrap { width: 360px; height: 245px; }
 }
+
 @media (max-width: 767px) {
-  /* Phone: no artwork at all, only palette + a soft glow. Keeps the page light
-     and leaves the headline and buttons completely clear. */
-  html[data-theme="spam-trap"] .landing { background-image: radial-gradient(600px 300px at 50% 0, rgba(255, 122, 26, 0.12), transparent 70%); background-size: auto; }
+  html[data-theme="spam-trap"] body::before {
+    background-image:
+      linear-gradient(180deg, rgba(10, 10, 13, 0.63), rgba(10, 10, 13, 0.8)),
+      url("spam-trap-steel-wide.webp");
+    background-position: center, 58% center;
+    background-size: auto, cover;
+    background-repeat: no-repeat;
+  }
   html[data-theme="spam-trap"] .hero-embers,
   html[data-theme="spam-trap"] .section-haze { display: none; }
-  html[data-theme="spam-trap"] .hero-logo-wrap { width: min(100%, 280px); height: 190px; }
+  html[data-theme="spam-trap"] .hero-logo-wrap { width: min(90.3%, 280px); height: 190px; }
   html[data-theme="spam-trap"] .hero-community { gap: 8px; }
   html[data-theme="spam-trap"] .hero-card { max-width: 100%; }
   html[data-theme="spam-trap"] .stat-item { min-width: 0; width: 100%; max-width: 320px; }
   html[data-theme="spam-trap"] .nav-links { background: #0f0f13; border-bottom: 1px solid var(--border2); }
-  html[data-theme="spam-trap"] .dash::before { height: 220px; }
 }
 
 /* --------------------------------------------------------------------------
