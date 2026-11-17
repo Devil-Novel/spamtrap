@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="halloween">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -23,95 +23,76 @@
 <meta name="twitter:title" content="Terms of Service - Spam Trap">
 <meta name="twitter:description" content="Terms of Service for Spam Trap, the Discord bot that catches spam bots and compromised accounts.">
 <meta name="twitter:image" content="https://spamtrap.help/og-image.png">
-<link rel="icon" href="https://cdn.discordapp.com/emojis/1524000021198930031.png?size=64">
+<link rel="icon" href="/brand-logo.webp" type="image/webp">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="manifest" href="/manifest.json">
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#060a10;--bg2:#0c1018;--surface:#0f1620;--border:#1a2538;--text:#eaeef3;--text2:#7d8da0;--text3:#4d5e72;--orange:#f47521;--font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
-body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh}
-a{color:var(--orange);text-decoration:none}a:hover{text-decoration:underline}
-.nav{position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(6,10,16,.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 32px;height:56px;display:flex;align-items:center;justify-content:space-between}
-.nav-brand{display:flex;align-items:center;gap:10px;font:700 17px var(--font)}
-.nav-brand img{height:28px}
-.nav-brand span{background:linear-gradient(135deg,#ff9240,var(--orange),#e83535);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.nav-links{display:flex;align-items:center;gap:4px}
-.nav-links a{color:var(--text);font:500 14px var(--font);padding:7px 13px;border-radius:8px;transition:all .15s}
-.nav-links a:hover{background:rgba(255,255,255,.05)}
-.container{max-width:800px;margin:0 auto;padding:90px 32px 60px}
-h1{font-size:32px;margin-bottom:8px;font-weight:800}
-.subtitle{color:var(--text2);font-size:14px;margin-bottom:40px}
-h3{font-size:18px;margin:32px 0 12px;color:var(--text);font-weight:700}
-p{font-size:15px;color:var(--text2);line-height:1.75;margin-bottom:14px}
-code{background:var(--surface);padding:2px 6px;border-radius:4px;font-size:13px;color:var(--orange)}
-.footer{padding:28px 32px;text-align:center;color:var(--text3);font-size:13px;border-top:1px solid var(--border);margin-top:40px}
-.footer a{color:var(--text3);margin:0 12px}
-.footer a:hover{color:var(--orange)}
-</style>
-<!-- Seasonal theme (palette only on this page). Remove data-theme from <html> to switch it off. -->
-<link rel="stylesheet" href="/halloween.css">
+<meta name="theme-color" content="#161514">
+<link rel="stylesheet" href="/site.css?v=brand-1">
 </head>
-<body>
-<nav class="nav">
-  <a href="/" style="text-decoration:none"><div class="nav-brand"><img src="/nav-logo.png" alt="Spam Trap" style="height:28px"><span>SPAM TRAP</span></div></a>
-  <div class="nav-links">
-    <a href="/">Home</a>
-    <a href="/privacy">Privacy</a>
-    <a href="/terms">Terms</a>
+<body class="legal-page">
+<header class="site-header">
+  <div class="nav">
+    <a class="nav-brand" href="/" aria-label="Spam Trap home"><img src="/brand-logo.webp" width="44" height="28" alt=""><span>Spam Trap</span></a>
+    <nav class="legal-nav" aria-label="Legal navigation">
+      <a href="/">Home</a>
+      <a href="/privacy">Privacy</a>
+      <a href="/terms" aria-current="page">Terms</a>
+    </nav>
   </div>
-</nav>
+</header>
 
-<div class="container">
+<main class="legal-content">
+<p class="eyebrow">Spam Trap · Legal</p>
 <h1>Terms of Service</h1>
 <p class="subtitle">Last updated: October 29, 2026</p>
 
-<h3>Service Overview</h3>
+<h2>Service Overview</h2>
 <p>Spam Trap is a free Discord moderation bot designed to detect spam, stop compromised accounts, and help keep Discord communities safe.</p>
 
-<h3>Eligibility</h3>
+<h2>Eligibility</h2>
 <p>You must be at least 13 years old to use Spam Trap. You must also have permission from the server owner or administrators and grant the bot the required Discord permissions such as <strong>Ban Members</strong> and <strong>Manage Server</strong>.</p>
 
-<h3>Acceptable Use</h3>
+<h2>Acceptable Use</h2>
 <p>Spam Trap must only be used for legitimate server moderation. You may not use the bot to harass users, target legitimate members, abuse its features, or violate Discord's Terms of Service.</p>
 
-<h3>How the Bot Works</h3>
+<h2>How the Bot Works</h2>
 <p>Spam Trap automatically monitors configured trap channels. When spam is detected, it performs the configured moderation action, removes spam messages, notifies the affected user when appropriate, and records the action in your moderation logs.</p>
 <p>Administrators may additionally enable optional <strong>server protections</strong> (scam links, raids, mass mentions, repeated messages, new-member restrictions, webhook spam, anti-nuke). These are off by default and alert-only until an administrator chooses a stronger action. Scam detection is heuristic and may produce false positives; anti-nuke reacts after actions occur and cannot restore deleted channels or roles or act on accounts ranked above the bot. Administrators are responsible for the actions they configure.</p>
 
-<h3>Automatic Trap Channel</h3>
+<h2>Automatic Trap Channel</h2>
 <p>When Spam Trap joins a server, it automatically creates a <strong>spam trap</strong> channel with a warning message and a live kick counter. A <strong>Translations</strong> button on that message shows the warning in multiple languages to anyone who clicks it. Administrators can rename or replace this channel at any time.</p>
 
-<h3>Limitation of Liability</h3>
+<h2>Limitation of Liability</h2>
 <p>Spam Trap is provided as is without warranties of any kind. While we work to provide accurate detection, we cannot guarantee that every action will be correct or uninterrupted. We are not responsible for false positives, service interruptions, downtime, or data loss.</p>
 
-<h3>Server Administrator Responsibilities</h3>
+<h2>Server Administrator Responsibilities</h2>
 <p>Server administrators are responsible for configuring Spam Trap correctly, maintaining proper role hierarchy, reviewing moderation logs, informing their community about automated moderation when appropriate, and ensuring their server complies with applicable laws and Discord's policies.</p>
 
-<h3>Web Dashboard</h3>
+<h2>Web Dashboard</h2>
 <p>The Spam Trap dashboard uses Discord OAuth2 for authentication. It only accesses your Discord username, avatar, and the list of servers you can manage. Login sessions automatically expire after seven days.</p>
 
-<h3>Service Availability</h3>
+<h2>Service Availability</h2>
 <p>We aim to keep Spam Trap available around the clock, but uninterrupted service cannot be guaranteed. Features may change, be suspended, or be discontinued at any time without prior notice.</p>
 
-<h3>Changes to These Terms</h3>
+<h2>Changes to These Terms</h2>
 <p>These Terms of Service may be updated from time to time. Continued use of Spam Trap after changes are published means you accept the updated terms.</p>
 
-<h3>Termination</h3>
+<h2>Termination</h2>
 <p>We reserve the right to suspend or terminate access to Spam Trap if these Terms are violated or if the service is abused.</p>
 
-<h3>Intellectual Property</h3>
+<h2>Intellectual Property</h2>
 <p>The Spam Trap name, logo, badges, branding, website, and related assets are the intellectual property of the Spam Trap project and may not be copied, redistributed, or used without permission.</p>
 
-<h3>Contact</h3>
+<h2>Contact</h2>
 <p>If you have any questions about these Terms, please contact us through <a href="https://github.com/Devil-Novel/spamtrap" target="_blank">GitHub Issues</a> or our <a href="https://discord.gg/93PyfsBqqq" target="_blank">Discord server</a>.</p>
 
-</div>
+</main>
 
 <footer class="footer">
   <a href="/">Home</a>
   <a href="/privacy">Privacy Policy</a>
   <a href="/terms">Terms of Service</a>
-  <p style="margin-top:12px">Ayman Mostafa &copy; 2026</p>
+  <p class="legal-copyright">Ayman Mostafa &copy; 2026</p>
 </footer>
 </body>
 </html>
